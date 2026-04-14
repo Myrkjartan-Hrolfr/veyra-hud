@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      2.5.6
+// @version      2.5.7
 // @description  Makes various ui improvements. Faster lootX, extra menu items, auto scroll to current battlepass, sync battlepass scroll bars
 // @author       [SEREPH] koenrad
 // @updateURL    https://raw.githubusercontent.com/koenrad/veyra-hud/refs/heads/main/src/ui-improvements.js
@@ -30,7 +30,10 @@ const LOOTING_BLACKLIST_SET = new Set(
   LOOTING_BLACKLIST.map((name) => name.toLowerCase().trim())
 );
 
-const PATCH_NOTES = `- Fix for faster loot x. May be limited to batches of 2000 now.
+const PATCH_NOTES = ` - Adds roles to enemy formation on solo and party pvp battle page.
+
+2.5.6:
+- Fix for faster loot x. May be limited to batches of 2000 now.
 
 2.5.5:
 - Updated the emberfall event link
@@ -3522,6 +3525,14 @@ v2.2.2:
     inputProps: { slider: true },
   });
 
+  const { container: showEnemyClassToggle } = createSettingsInput({
+    key: "ui-improvements:showEnemyClass",
+    label: "Show Enemy Class",
+    defaultValue: true,
+    type: "checkbox",
+    inputProps: { slider: true },
+  });
+
   const { container: showAttackCardToggle } = createSettingsInput({
     key: "ui-improvements:showAttackCard",
     label: "Show Attack Card",
@@ -3564,6 +3575,7 @@ v2.2.2:
 
   addSettingsGroup("pvp", "PvP", "Settings related to PvP", [
     useCustomSoloPvPStylesToggle,
+    showEnemyClassToggle,
     showEnemyLastHitToggle,
     showAllyLastHitToggle,
     showAttackCardToggle,
@@ -3577,6 +3589,8 @@ v2.2.2:
   );
 
   const showAttackCard = Storage.get("ui-improvements:showAttackCard", true);
+
+  const showEnemyClass = Storage.get("ui-improvements:showEnemyClass", true);
 
   const showEnemyLastHit = Storage.get(
     "ui-improvements:showEnemyLastHit",
@@ -3989,4 +4003,104 @@ v2.2.2:
   }
 
   // ----------------------------- PvP Main Page ---------------------------- //
+
+  // ----------------------- PvP Battle (Solo & Party) ---------------------- //
+  // -------------------------- Show Enemy Classes -------------------------- //
+
+  if (window.location.href.includes("pvp_battle.php") && showEnemyClass) {
+    async function waitForStateData(getState, timeout = 5000) {
+      const start = Date.now();
+
+      while (Date.now() - start < timeout) {
+        const state = getState();
+        if (state?.teams?.enemy?.players_by_num) {
+          updateEnemyRoleCache(state);
+          return state;
+        }
+        await new Promise((r) => setTimeout(r, 100));
+      }
+
+      throw new Error("stateData not available");
+    }
+
+    let scheduled = false;
+
+    const observer = new MutationObserver(() => {
+      if (scheduled) return;
+      scheduled = true;
+
+      requestAnimationFrame(() => {
+        applyEnemyRolesFromCache();
+        scheduled = false;
+      });
+    });
+
+    function observeFormation() {
+      const formation = document.querySelector("#enemyFormation");
+      if (!formation) return;
+
+      observer.observe(formation, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    // Re-attach if the whole formation gets replaced
+    const rootObserver = new MutationObserver(() => {
+      const formation = document.querySelector("#enemyFormation");
+      if (formation && !formation._observed) {
+        formation._observed = true;
+        observeFormation();
+      }
+    });
+
+    rootObserver.observe(document.body, { childList: true, subtree: true });
+
+    function applyEnemyRolesFromCache() {
+      const slots = document.querySelectorAll("#enemyFormation .pSlot");
+
+      slots.forEach((slot) => {
+        const key = slot.dataset.key;
+        const role = enemyRoleCache[key];
+
+        if (!role) return;
+
+        let roleEl = slot.querySelector(".roleTag");
+
+        // ✅ Skip if already correct
+        if (roleEl && roleEl.textContent === role) return;
+
+        if (!roleEl) {
+          roleEl = document.createElement("div");
+          roleEl.className = "roleTag";
+          roleEl.style.fontSize = "11px";
+          roleEl.style.opacity = "0.8";
+
+          const uname = slot.querySelector(".uname");
+          if (uname) uname.insertAdjacentElement("afterend", roleEl);
+        }
+
+        roleEl.textContent = role;
+      });
+    }
+
+    const enemyRoleCache = {};
+
+    function updateEnemyRoleCache(stateData) {
+      const enemies = stateData?.teams?.enemy?.players_by_num;
+      if (!enemies) return;
+
+      Object.values(enemies).forEach((p) => {
+        enemyRoleCache[p.key] = p.role;
+      });
+    }
+
+    (async () => {
+      try {
+        await waitForStateData(() => stateData);
+      } catch (err) {
+        console.error("Failed to apply enemy roles:", err);
+      }
+    })();
+  }
 })();
