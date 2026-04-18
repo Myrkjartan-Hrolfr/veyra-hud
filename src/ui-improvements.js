@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UI Improvements
 // @namespace    http://tampermonkey.net/
-// @version      2.5.7
+// @version      2.5.8
 // @description  Makes various ui improvements. Faster lootX, extra menu items, auto scroll to current battlepass, sync battlepass scroll bars
 // @author       [SEREPH] koenrad
 // @updateURL    https://raw.githubusercontent.com/koenrad/veyra-hud/refs/heads/main/src/ui-improvements.js
@@ -27,10 +27,13 @@ const LOOTING_BLACKLIST = [
 
 // normalize blacklist once
 const LOOTING_BLACKLIST_SET = new Set(
-  LOOTING_BLACKLIST.map((name) => name.toLowerCase().trim())
+  LOOTING_BLACKLIST.map((name) => name.toLowerCase().trim()),
 );
 
-const PATCH_NOTES = ` - Adds roles to enemy formation on solo and party pvp battle page.
+const PATCH_NOTES = `- Adds retries attack when rate limited in the strategic attack. Should be little to no failures now.
+
+2.5.6:
+- Adds roles to enemy formation on solo and party pvp battle page.
 
 2.5.6:
 - Fix for faster loot x. May be limited to batches of 2000 now.
@@ -203,7 +206,7 @@ v2.2.2:
       if (!res.ok || !data) {
         showNotification(
           data?.message || raw.slice(0, 200) || `HTTP ${res.status}`,
-          "error"
+          "error",
         );
         return false;
       }
@@ -224,7 +227,8 @@ v2.2.2:
   function addMenuLinkAfter(afterLabel, newUrl, newTitle, newIcon = "✨") {
     // Find the anchor with the matching label text
     const targetLink = [...document.querySelectorAll(".side-nav-item")].find(
-      (el) => el.querySelector(".side-label")?.textContent.trim() === afterLabel
+      (el) =>
+        el.querySelector(".side-label")?.textContent.trim() === afterLabel,
     );
 
     if (!targetLink) {
@@ -264,7 +268,7 @@ v2.2.2:
 
   const betterGameTopBar = Storage.get(
     "ui-improvements:betterGameTopBar",
-    true
+    true,
   );
   if (betterGameTopBar) {
     GM_addStyle(`
@@ -299,11 +303,11 @@ v2.2.2:
   // Get asterion settings from storage
   const useAsterion = Storage.get("ui-improvements:useAsterion", false);
   const asterionValue = parseFloat(
-    Storage.get("ui-improvements:asterionValue", 1.5)
+    Storage.get("ui-improvements:asterionValue", 1.5),
   );
   const useBetterAttackButtons = Storage.get(
     "ui-improvements:useBetterAttackButtons",
-    true
+    true,
   );
 
   const { container: useCustomNavigationToggle } = createSettingsInput({
@@ -357,7 +361,7 @@ v2.2.2:
 
   const useCustomNavigation = Storage.get(
     "ui-improvements:useCustomNavigation",
-    true
+    true,
   );
 
   if (useCustomNavigation) {
@@ -365,7 +369,7 @@ v2.2.2:
     const eventLink = [...document.querySelectorAll(".side-nav-item")].find(
       (el) =>
         el.querySelector(".side-label")?.textContent.trim() ===
-        "Emberfall Event"
+        "Emberfall Event",
     );
 
     eventLink.href = "/event_page.php?event=8";
@@ -383,7 +387,7 @@ v2.2.2:
 
     // Find the "Home" link by its label text
     const homeLink = [...document.querySelectorAll(".side-nav-item")].find(
-      (el) => el.querySelector(".side-label")?.textContent.trim() === "Home"
+      (el) => el.querySelector(".side-label")?.textContent.trim() === "Home",
     );
 
     if (homeLink) {
@@ -391,49 +395,49 @@ v2.2.2:
         "Emberfall Event",
         "/active_wave.php?event=8&wave=101",
         "Arcane Wild Fringe",
-        "🌊 "
+        "🌊 ",
       );
 
       addMenuLinkAfter(
         "Home",
         "/active_wave.php?gate=3&wave=8",
         "Wave 3",
-        "🌊"
+        "🌊",
       );
 
       addMenuLinkAfter(
         "Home",
         "/active_wave.php?gate=5&wave=9",
         "Olympus",
-        "🏛️"
+        "🏛️",
       );
 
       addMenuLinkAfter(
         "Merchant",
         "/black_merchant.php",
         "Black Merchant",
-        "💀"
+        "💀",
       );
 
       addMenuLinkAfter(
         "Blacksmith",
         "/legendary_forge.php",
         "Legendary Forge",
-        "🔥"
+        "🔥",
       );
 
       addMenuLinkAfter(
         "Legendary Forge",
         "/legendary_decraft.php",
         "Decraft Altar",
-        "🛕"
+        "🛕",
       );
 
       addMenuLinkAfter(
         "Battle Pass",
         "/weekly.php",
         "Weekly Leaderboard",
-        "🏆"
+        "🏆",
       );
 
       addMenuLinkAfter("Inventory", "/shadow_army.php", "Shadow Army", "☠");
@@ -442,7 +446,7 @@ v2.2.2:
         "Weekly Leaderboard",
         "#",
         "Veyra-Hud Settings",
-        "⚙️"
+        "⚙️",
       );
       settingsTrigger.addEventListener("click", () => {
         if (typeof settingsDrawer?.open === "function") {
@@ -561,22 +565,22 @@ v2.2.2:
     "battlepass-page",
     "BattlePass Settings",
     "Settings related to the Battlepass page",
-    [syncBattlePassScrollbarsToggle, scrollToCurrentLevelToggle]
+    [syncBattlePassScrollbarsToggle, scrollToCurrentLevelToggle],
   );
 
   const syncBattlePassScrollbars = Storage.get(
     "ui-improvements:syncBattlePassScrollbars",
-    true
+    true,
   );
   const scrollToCurrentLevel = Storage.get(
     "ui-improvements:scrollToCurrentLevel",
-    true
+    true,
   );
 
   // sync scroll bars
   function syncScrollBars() {
     const scrollContainers = Array.from(
-      document.querySelectorAll(".bp-scroll")
+      document.querySelectorAll(".bp-scroll"),
     );
 
     let isSyncing = false;
@@ -601,7 +605,7 @@ v2.2.2:
 
   function getHighestReachedLevel() {
     const reachedBadges = [...document.querySelectorAll(".lvl-badge")].filter(
-      (b) => b.textContent.trim() === "Reached"
+      (b) => b.textContent.trim() === "Reached",
     );
 
     if (reachedBadges.length === 0) return null;
@@ -611,7 +615,7 @@ v2.2.2:
       .map((badge) => {
         const parent = badge.parentElement;
         const levelBadge = parent.querySelector(
-          '.lvl-badge:not([style*="Reached"])'
+          '.lvl-badge:not([style*="Reached"])',
         );
         if (!levelBadge) return null;
         const match = levelBadge.textContent.trim().match(/^L(\d+)$/);
@@ -712,7 +716,7 @@ v2.2.2:
       defaultValue: true,
       type: "checkbox",
       inputProps: { slider: true },
-    }
+    },
   );
 
   const { container: unlockSelectLimitToggle } = createSettingsInput({
@@ -748,19 +752,19 @@ v2.2.2:
   const minHpValue = Storage.get("ui-improvements:minHpValue", 0);
   const maxHpValue = Storage.get(
     "ui-improvements:maxHpValue",
-    Number.MAX_SAFE_INTEGER
+    Number.MAX_SAFE_INTEGER,
   );
   const unlockSelectLimit = Storage.get(
     "ui-improvements:unlockSelectLimit",
-    true
+    true,
   );
   const disableGateInfo = Storage.get(
     "ui-improvements:disableGateInfoToggle",
-    true
+    true,
   );
   const ATTACK_COOLDOWN = Storage.get(
     "ui-improvements:strategicAttackWaitBuffer",
-    1050
+    1050,
   );
 
   const { container: sortMobsByHpInSettingsToggle } = createSettingsInput({
@@ -824,7 +828,7 @@ v2.2.2:
       inputProps: {
         style: { width: "100px" },
       },
-    }
+    },
   );
 
   addSettingsGroup(
@@ -837,7 +841,7 @@ v2.2.2:
       filterMobsByHpInSettingsToggle,
       minHpValueToggle,
       maxHpValueToggle,
-    ]
+    ],
   );
 
   addSettingsGroup(
@@ -853,7 +857,7 @@ v2.2.2:
       flashHpBarWhenLowContainer,
       ignoreBossMobsWhenLootingContainer,
       disableGateInfoToggle,
-    ]
+    ],
   );
 
   if (window.location.href.includes("/active_wave.php")) {
@@ -875,7 +879,7 @@ v2.2.2:
         } else {
           hpFill.parentElement.classList.remove(
             "flash-red-border",
-            "needs-heal"
+            "needs-heal",
           );
         }
       }
@@ -887,10 +891,10 @@ v2.2.2:
     function getEligibleMobs(doc = document) {
       const ignoreBossMobsWhenLooting = Storage.get(
         "ui-improvements:ignoreBossMobsWhenLooting",
-        true
+        true,
       );
       const els = Array.from(
-        doc.querySelectorAll('.monster-card[data-eligible="1"]')
+        doc.querySelectorAll('.monster-card[data-eligible="1"]'),
       );
       return els
         .filter((el) => {
@@ -935,7 +939,7 @@ v2.2.2:
           } catch (e) {
             console.error(
               `Error encountered while fetching dead mobs on page ${i}:`,
-              e
+              e,
             );
             $stat.textContent = `Error encountered while fetching dead mobs on page ${i}.... continuing`;
             await sleep(3000);
@@ -948,7 +952,7 @@ v2.2.2:
 
     const enableLootXFaster = Storage.get(
       "ui-improvements:enableLootXFaster",
-      true
+      true,
     );
     const $stat = document.getElementById("lootStatus");
     $stat.style.flexBasis = "100%";
@@ -1019,7 +1023,7 @@ v2.2.2:
                   }
 
                   const el = document.querySelector(
-                    `.monster-card[data-monster-id="${targetId}"]`
+                    `.monster-card[data-monster-id="${targetId}"]`,
                   );
                   if (el) el.setAttribute("data-eligible", "0");
                 } else {
@@ -1052,7 +1056,7 @@ v2.2.2:
               dmg: totalDmg,
             },
             allItems,
-            allNotes
+            allNotes,
           );
         });
       }
@@ -1086,13 +1090,13 @@ v2.2.2:
         <span class="chip">Success: ${summary.success}</span>
         <span class="chip">Fail: ${summary.fail}</span>
         <span class="chip">EXP: ${new Intl.NumberFormat().format(
-          summary.exp
+          summary.exp,
         )}</span>
         <span class="chip">Gold: ${new Intl.NumberFormat().format(
-          summary.gold
+          summary.gold,
         )}</span>
         <span class="chip">Damage: ${new Intl.NumberFormat().format(
-          summary.dmg
+          summary.dmg,
         )}</span>
         <span class="chip">Items: ${items.length}</span>
       `;
@@ -1105,7 +1109,7 @@ v2.2.2:
       let filteredNotes = (notes || []).filter(Boolean);
       if (items.length > 0) {
         filteredNotes = filteredNotes.filter(
-          (n) => !DROPLESS_PATTERNS.some((p) => p.test(n))
+          (n) => !DROPLESS_PATTERNS.some((p) => p.test(n)),
         );
       }
       const noteText = Array.from(new Set(filteredNotes)).join(" ");
@@ -1131,7 +1135,7 @@ v2.2.2:
               <small>${it.NAME}</small>
               ${it.TIER ? `<small class="muted">${it.TIER}</small>` : ``}
             </div>
-          `
+          `,
             )
             .join("")
         : `<div class="muted" style="padding:6px 0;">No items this time.</div>`;
@@ -1145,7 +1149,7 @@ v2.2.2:
 
       const ignoreBossMobsWhenLooting = Storage.get(
         "ui-improvements:ignoreBossMobsWhenLooting",
-        true
+        true,
       );
 
       // Find the existing click listeners
@@ -1192,7 +1196,7 @@ v2.2.2:
                 allNotes.push(res.note);
               }
               const el = document.querySelector(
-                `.monster-card[data-monster-id="${targetIds[i]}"]`
+                `.monster-card[data-monster-id="${targetIds[i]}"]`,
               );
               if (el) el.setAttribute("data-eligible", "0");
             } else {
@@ -1217,7 +1221,7 @@ v2.2.2:
             dmg: totalDmg,
           },
           allItems,
-          allNotes
+          allNotes,
         );
       });
     }
@@ -1228,7 +1232,7 @@ v2.2.2:
     // --------- In Battle Count Injection ------------//
     const enableInBattleCount = Storage.get(
       "ui-improvements:enableInBattleCount",
-      true
+      true,
     );
     if (enableInBattleCount) {
       const calculateInBattle = () => {
@@ -1270,7 +1274,7 @@ v2.2.2:
       `);
       // Find the HP row
       const hpRow = [...document.querySelectorAll(".res-row")].find((row) =>
-        row.querySelector(".res-label")?.textContent.includes("Hp")
+        row.querySelector(".res-label")?.textContent.includes("Hp"),
       );
 
       if (!hpRow) return;
@@ -1549,7 +1553,7 @@ v2.2.2:
             ">": "&gt;",
             '"': "&quot;",
             "'": "&#39;",
-          }[m])
+          })[m],
       );
     }
 
@@ -1584,10 +1588,41 @@ v2.2.2:
         typeof d.message === "string" && d.message.trim()
           ? d.message
           : typeof d.error === "string" && d.error.trim()
-          ? d.error
-          : raw || (ok ? "OK" : "Failed");
+            ? d.error
+            : raw || (ok ? "OK" : "Failed");
 
       return { ok, msg, data: d, raw };
+    }
+
+    function isAttackRateLimited(res) {
+      if (res?.status === 429 || res?.status === 503) return true;
+
+      const d = res?.data;
+      if (d && typeof d === "object" && d.status === "error") {
+        const m = String(d.message || "").toLowerCase();
+        if (
+          /slow down|too quickly|too fast|attacking too quickly|rate[\s_-]?limit|throttl/i.test(
+            m,
+          )
+        ) {
+          return true;
+        }
+      }
+
+      const blob =
+        `${res?.msg || ""} ${res?.raw || ""} ${typeof res?.data === "object" && res.data ? JSON.stringify(res.data) : ""}`.toLowerCase();
+      return /rate[\s_-]?limit|too fast|too many requests|throttl|slow down|too quickly|attacking too quickly|wait (?:\d+|a few)|try again in|cooling down|not ready|please wait/i.test(
+        blob,
+      );
+    }
+
+    function backoffMsForAttackRateLimit(res, attemptIndex) {
+      if (res?.retryAfterMs != null && res.retryAfterMs > 0) {
+        return Math.min(res.retryAfterMs, 120_000);
+      }
+      const base = 800;
+      const cap = 20_000;
+      return Math.min(cap, base * 2 ** attemptIndex);
     }
 
     function openBatchAttackModal(results) {
@@ -1682,7 +1717,7 @@ v2.2.2:
 
     function setQuickBtnsRunning(running) {
       const quickBtns = Array.from(
-        document.querySelectorAll(".btnQuickJoinAttack")
+        document.querySelectorAll(".btnQuickJoinAttack"),
       );
       quickBtns.forEach((b) => {
         b.disabled = running;
@@ -1707,25 +1742,25 @@ v2.2.2:
     async function performAttackStrat(
       monsterId,
       attackStrat,
-      startJoinTime = performance.now()
+      startJoinTime = performance.now(),
     ) {
       const useDamageLimit = Storage.get(
         "ui-improvements:useDamageLimit",
-        false
+        false,
       );
       const damageLimitValue = parseFloat(
-        Storage.get("ui-improvements:damageLimitValue") || 0
+        Storage.get("ui-improvements:damageLimitValue") || 0,
       );
 
       const results = [];
       let totalDamage = 0;
 
-      for (const skillName of attackStrat) {
+      stratLoop: for (const skillName of attackStrat) {
         const skill = Skills[skillName.toLowerCase()];
 
         if (!skill) {
           results.push(
-            buildResult(skillName, false, `Unknown skill: ${skillName}`)
+            buildResult(skillName, false, `Unknown skill: ${skillName}`),
           );
           continue;
         }
@@ -1739,45 +1774,67 @@ v2.2.2:
           break;
         }
 
+        const maxRateLimitRetries = 8;
         try {
-          const startAttackTime =
-            results.length === 0 ? startJoinTime : performance.now();
-          const res = await doAttack(
-            monsterId,
-            parseInt(skill.id, 10),
-            skill.cost
-          );
+          for (
+            let rateAttempt = 0;
+            rateAttempt < maxRateLimitRetries;
+            rateAttempt++
+          ) {
+            const startAttackTime =
+              results.length === 0 ? startJoinTime : performance.now();
+            const res = await doAttack(
+              monsterId,
+              parseInt(skill.id, 10),
+              skill.cost,
+            );
 
-          const msg =
-            res.msg ||
-            (res.ok
-              ? `Attacked with ${skillName}`
-              : `Attack failed with ${skillName}`);
-
-          const match = msg.match(/<strong>([\d,]+)<\/strong>/);
-          const damage = match ? Number(match[1].replace(/,/g, "")) : 0;
-
-          totalDamage += damage;
-
-          results.push(buildResult(skillName, !!res.ok, msg, damage));
-
-          if (ATTACK_COOLDOWN) {
-            const endAttackTime = performance.now();
-            const cd = ATTACK_COOLDOWN - (endAttackTime - startAttackTime);
-            if (cd > 0) {
-              console.log(`waiting for cooldown ${cd}ms on ${monsterId}`);
-              await sleep(cd);
+            if (
+              !res.ok &&
+              isAttackRateLimited(res) &&
+              rateAttempt < maxRateLimitRetries - 1
+            ) {
+              const waitMs = backoffMsForAttackRateLimit(res, rateAttempt);
+              console.info(
+                `Attack rate limited (${skillName}), retry ${rateAttempt + 1}/${maxRateLimitRetries} after ${waitMs}ms`,
+              );
+              await sleep(waitMs);
+              continue;
             }
-          }
 
-          if (!res.ok) break; // stop strategy on failure
-        } catch {
+            const msg =
+              res.msg ||
+              (res.ok
+                ? `Attacked with ${skillName}`
+                : `Attack failed with ${skillName}`);
+
+            const match = msg.match(/<strong>([\d,]+)<\/strong>/);
+            const damage = match ? Number(match[1].replace(/,/g, "")) : 0;
+
+            totalDamage += damage;
+
+            results.push(buildResult(skillName, !!res.ok, msg, damage));
+
+            if (ATTACK_COOLDOWN) {
+              const endAttackTime = performance.now();
+              const cd = ATTACK_COOLDOWN - (endAttackTime - startAttackTime);
+              if (cd > 0) {
+                console.log(`waiting for cooldown ${cd}ms on ${monsterId}`);
+                await sleep(cd);
+              }
+            }
+
+            if (!res.ok) break stratLoop; // stop strategy on failure
+            break; // success: next skill
+          }
+        } catch (error) {
+          console.log("failed because of", error);
           results.push(
             buildResult(
               skillName,
               false,
-              `Attack request failed (${skillName})`
-            )
+              `Attack request failed (${skillName})`,
+            ),
           );
           break;
         }
@@ -1808,7 +1865,14 @@ v2.2.2:
     }
 
     async function doAttack(monsterId, skillId, stam) {
-      if (!ATTACK_URL) return { ok: false, msg: "Attack endpoint not set" };
+      if (!ATTACK_URL) {
+        return {
+          ok: false,
+          msg: "Attack endpoint not set",
+          status: 0,
+          retryAfterMs: null,
+        };
+      }
 
       // ✅ damage.php expects POST monster_id + skill_id
       const payload = {
@@ -1824,7 +1888,14 @@ v2.2.2:
       // if (cooldown > 0) {
       //   await sleep(cooldown);
       // }
-      return { ok: n.ok, msg: n.msg, data: n.data, raw: n.raw };
+      return {
+        ok: n.ok,
+        msg: n.msg,
+        data: n.data,
+        raw: n.raw,
+        status: r.status,
+        retryAfterMs: r.retryAfterMs,
+      };
     }
 
     async function postForm(url, payload) {
@@ -1838,10 +1909,31 @@ v2.2.2:
       });
       const txt = await res.text();
 
+      let retryAfterMs = null;
+      const ra = res.headers.get("Retry-After");
+      if (ra) {
+        const sec = parseInt(String(ra).trim(), 10);
+        if (Number.isFinite(sec) && sec > 0) {
+          retryAfterMs = Math.min(sec * 1000, 120_000);
+        }
+      }
+
       try {
-        return { ok: res.ok, data: JSON.parse(txt), raw: txt };
+        return {
+          ok: res.ok,
+          status: res.status,
+          retryAfterMs,
+          data: JSON.parse(txt),
+          raw: txt,
+        };
       } catch (_e) {
-        return { ok: res.ok, data: null, raw: txt };
+        return {
+          ok: res.ok,
+          status: res.status,
+          retryAfterMs,
+          data: null,
+          raw: txt,
+        };
       }
     }
 
@@ -1904,11 +1996,11 @@ v2.2.2:
       // Load settings localStorage
       let useAsterion = Storage.get("ui-improvements:useAsterion", false);
       let asterionValue = parseFloat(
-        Storage.get("ui-improvements:asterionValue") || 1
+        Storage.get("ui-improvements:asterionValue") || 1,
       );
       let useDamageLimit = Storage.get("ui-improvements:useDamageLimit", false);
       let damageLimitValue = parseFloat(
-        Storage.get("ui-improvements:damageLimitValue") || 0
+        Storage.get("ui-improvements:damageLimitValue") || 0,
       );
       // let useParallelJoins = Storage.get(
       //   "ui-improvements:useParallelJoins",
@@ -1928,7 +2020,7 @@ v2.2.2:
 
         // update the strategic attack button on the main page
         let newButtonString = `🧠 Quick Join & Attack (${getAttackStrategyCost(
-          attackStrategy
+          attackStrategy,
         )}) `;
         if (useDamageLimit) {
           newButtonString += `(limit ${formatShortNumber(damageLimitValue)})`;
@@ -1993,7 +2085,7 @@ v2.2.2:
         }
 
         let damageLimitContainer = document.getElementById(
-          "damageLimitContainer"
+          "damageLimitContainer",
         );
         if (!damageLimitContainer) {
           damageLimitContainer = document.createElement("div");
@@ -2164,7 +2256,7 @@ v2.2.2:
     (function injectAttackSettings() {
       const enableCustomAttackStrategy = Storage.get(
         "ui-improvements:enableCustomAttackStrategy",
-        true
+        true,
       );
       if (enableCustomAttackStrategy) {
         const actions = document.querySelector(".qol-select-actions");
@@ -2212,7 +2304,7 @@ v2.2.2:
     (async function injectAttackStratButton() {
       const enableCustomAttackStrategy = Storage.get(
         "ui-improvements:enableCustomAttackStrategy",
-        true
+        true,
       );
 
       if (enableCustomAttackStrategy) {
@@ -2229,14 +2321,14 @@ v2.2.2:
 
         let useDamageLimit = Storage.get(
           "ui-improvements:useDamageLimit",
-          false
+          false,
         );
         let damageLimitValue = parseFloat(
-          Storage.get("ui-improvements:damageLimitValue") || 0
+          Storage.get("ui-improvements:damageLimitValue") || 0,
         );
 
         let newButtonString = `🧠 Quick Join & Attack (${getAttackStrategyCost(
-          attackStrategy
+          attackStrategy,
         )}) `;
 
         if (useDamageLimit) {
@@ -2277,11 +2369,11 @@ v2.2.2:
 
           const runTask = async (id, i) => {
             showStatus(
-              `(${i + 1}/${ids.length}) Strategy attacking monster #${id}...`
+              `(${i + 1}/${ids.length}) Strategy attacking monster #${id}...`,
             );
 
             const card = document.querySelector(
-              `.monster-card[data-monster-id="${id}"]`
+              `.monster-card[data-monster-id="${id}"]`,
             );
 
             const alreadyJoined = card && card.dataset.joined === "1";
@@ -2314,7 +2406,7 @@ v2.2.2:
             const atkResults = await performAttackStrat(
               id,
               attackStrategy,
-              startJoinTime
+              startJoinTime,
             );
 
             const resultsEl = document.createElement("div");
@@ -2384,7 +2476,7 @@ v2.2.2:
       // Extract HP data
       const parsed = cards.map((card) => {
         const hpText = card.querySelector(
-          ".stat-icon.hp + .stat-main .stat-value"
+          ".stat-icon.hp + .stat-main .stat-value",
         )?.textContent;
 
         if (!hpText) {
@@ -2586,7 +2678,7 @@ v2.2.2:
 
     // ------------ Add Join Buttons For Bosses --------------- //
     const autoSummonCards = document.querySelectorAll(
-      '.auto-summon-card[data-alive="1"]'
+      '.auto-summon-card[data-alive="1"]',
     );
 
     autoSummonCards.forEach((card) => {
@@ -2597,7 +2689,7 @@ v2.2.2:
 
       // Find matching monster card by data-name
       const monsterCard = document.querySelector(
-        `.monster-card[data-name="${monsterName}"]`
+        `.monster-card[data-name="${monsterName}"]`,
       );
 
       if (!monsterCard) return;
@@ -2642,12 +2734,12 @@ v2.2.2:
     "merchant-page",
     "Merchant",
     "Settings related to the merchant page.",
-    [enableBuyMaxButtonsToggle]
+    [enableBuyMaxButtonsToggle],
   );
 
   const enableBuyAllButons = Storage.get(
     "ui-improvements:enableBuyAllButtons",
-    true
+    true,
   );
 
   function getGoldBalance() {
@@ -2695,7 +2787,7 @@ v2.2.2:
         const totalCost = price * buyX;
 
         const confirmed = window.confirm(
-          `Confirm Purchase\n\nBuy ${buyX} × ${itemName}\nCost: ${totalCost.toLocaleString()} Gold`
+          `Confirm Purchase\n\nBuy ${buyX} × ${itemName}\nCost: ${totalCost.toLocaleString()} Gold`,
         );
 
         if (!confirmed) return;
@@ -2787,19 +2879,19 @@ v2.2.2:
       defaultValue: true,
       type: "checkbox",
       inputProps: { slider: true },
-    }
+    },
   );
 
   addSettingsGroup(
     "guild-management",
     "Guild Management",
     "Settings related to the guild pages.",
-    [enableGuildMemberListSortingToggle]
+    [enableGuildMemberListSortingToggle],
   );
 
   const enableGuildMemberListSorting = Storage.get(
     "ui-improvements:enableGuildMemberListSorting",
-    true
+    true,
   );
 
   if (
@@ -2918,20 +3010,20 @@ v2.2.2:
     "dungeon",
     "Dungeon Loot",
     "settings for bulk dungeon looting",
-    [useDungeonLootToggle, stopLootingOnLevelUpToggle]
+    [useDungeonLootToggle, stopLootingOnLevelUpToggle],
   );
 
   const useDungeonLoot = Storage.get("ui-improvements:useDungeonLoot", true);
   const stopLootingOnLevelUp = Storage.get(
     "ui-improvements:stopLootingOnLevelUp",
-    true
+    true,
   );
 
   function getUnootedMobs(doc = document) {
     return [...doc.querySelectorAll(".mon.dead")].filter((mon) =>
       [...mon.querySelectorAll(".pill")].some(
-        (pill) => pill.textContent.trim() === "not looted"
-      )
+        (pill) => pill.textContent.trim() === "not looted",
+      ),
     );
   }
 
@@ -3090,7 +3182,7 @@ v2.2.2:
     console.info("veyra-hud: loot modal init");
     let lootModal;
     const lootModals = document.getElementsByClassName(
-      "veyra-hud-custom-loot-modal"
+      "veyra-hud-custom-loot-modal",
     );
     const exists = lootModals?.length > 0;
     if (exists) {
@@ -3279,7 +3371,7 @@ v2.2.2:
     // const userId = getHealUserId();
     if (!userId || !monsterId || !instanceId) {
       console.warn(
-        `lootMonster: missing params! userId: ${userId}, monsterId: ${monsterId}, instanceId: ${instanceId}`
+        `lootMonster: missing params! userId: ${userId}, monsterId: ${monsterId}, instanceId: ${instanceId}`,
       );
       return;
     }
@@ -3385,7 +3477,7 @@ v2.2.2:
     const expToLevel = getRequiredExperienceToLevel();
     for (const location of locations) {
       const locationPage = await internalFetch(
-        `/guild_dungeon_location.php?instance_id=${instanceId}&location_id=${location}`
+        `/guild_dungeon_location.php?instance_id=${instanceId}&location_id=${location}`,
       );
       const unlootedMobs = getUnootedMobs(locationPage);
       mobsToLoot.push(...unlootedMobs);
@@ -3585,7 +3677,7 @@ v2.2.2:
 
   const useCustomSoloPvPStyles = Storage.get(
     "ui-improvements:useCustomSoloPvPStyles",
-    true
+    true,
   );
 
   const showAttackCard = Storage.get("ui-improvements:showAttackCard", true);
@@ -3594,17 +3686,17 @@ v2.2.2:
 
   const showEnemyLastHit = Storage.get(
     "ui-improvements:showEnemyLastHit",
-    true
+    true,
   );
 
   const moveRecentBattles = Storage.get(
     "ui-improvements:moveRecentBattles",
-    true
+    true,
   );
 
   const linkRecentBattles = Storage.get(
     "ui-improvements:linkRecentBattles",
-    true
+    true,
   );
 
   const showAllyLastHit = Storage.get("ui-improvements:showAllyLastHit", true);
@@ -3621,7 +3713,7 @@ v2.2.2:
     console.log("isSolo", isSolo);
     if (isSolo) {
       const turnCard = [...document.querySelectorAll(".card")].find((card) =>
-        card.querySelector(".card-title")?.textContent.includes("Turn Control")
+        card.querySelector(".card-title")?.textContent.includes("Turn Control"),
       );
 
       const playerEl = document.querySelector(".topbar .pill .val.dim");
@@ -3646,7 +3738,7 @@ v2.2.2:
         const tokens = Number(modalTokens.textContent);
 
         for (const skillCard of document.querySelectorAll(
-          "#skillsGrid2 .skillCard"
+          "#skillsGrid2 .skillCard",
         )) {
           const cost = Number(skillCard.dataset.cost);
           skillCard.disabled = tokens < cost;
@@ -3689,9 +3781,9 @@ v2.2.2:
                 createSkillButton(skill, () =>
                   useSkill(
                     String(skill.id || "0"),
-                    String(skill.target || "enemy")
-                  )
-                )
+                    String(skill.target || "enemy"),
+                  ),
+                ),
               );
             });
         }
