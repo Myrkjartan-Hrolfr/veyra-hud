@@ -13,21 +13,21 @@
 // ==/UserScript==
 
 const LOOTING_BLACKLIST = [
-  "drakzareth the cataclysmic half dragon king",
-  "general skarn the radiant bastion",
-  "general vessir the sunfang duelist",
-  "general hrazz the dawnflame oathkeeper",
-  "vessir, the solar inferna empress",
-  "drakzareth the tyrant lizard king",
-  "hrazz the dawnflame seraph",
-  "skarn, the molten general",
-  "oceanus the water titan",
-  "poseidon, the sea emperor",
+    "drakzareth the cataclysmic half dragon king",
+    "general skarn the radiant bastion",
+    "general vessir the sunfang duelist",
+    "general hrazz the dawnflame oathkeeper",
+    "vessir, the solar inferna empress",
+    "drakzareth the tyrant lizard king",
+    "hrazz the dawnflame seraph",
+    "skarn, the molten general",
+    "oceanus the water titan",
+    "poseidon, the sea emperor",
 ];
 
 // normalize blacklist once
 const LOOTING_BLACKLIST_SET = new Set(
-  LOOTING_BLACKLIST.map((name) => name.toLowerCase().trim()),
+    LOOTING_BLACKLIST.map((name) => name.toLowerCase().trim()),
 );
 
 const PATCH_NOTES = `- Adds retries attack when rate limited in the strategic attack. Should be little to no failures now.
@@ -125,7 +125,7 @@ const PATCH_NOTES = `- Adds retries attack when rate limited in the strategic at
 v2.2.4:
 - Added menu link to Lunar Plague event
 
-v2.2.3: 
+v2.2.3:
 - vanilla loot-x button now ignores boss corpses (if set)
 
 v2.2.2:
@@ -134,13 +134,13 @@ v2.2.2:
 
 //TODO:: add this whitelist to mob pagination trick
 (async function () {
-  ("use strict");
+    ("use strict");
 
-  if (typeof upgradeCheck === "function") {
-    upgradeCheck(PATCH_NOTES);
-  }
+    if (typeof upgradeCheck === "function") {
+        upgradeCheck(PATCH_NOTES);
+    }
 
-  GM_addStyle(`
+    GM_addStyle(`
     .custom-loot-btn {
       background: #333;
       border: none;
@@ -171,107 +171,107 @@ v2.2.2:
         border-color: red;
       }
     }
-    
+
   `);
 
-  // ===============================
-  // UTILITIES
-  // ===============================
+    // ===============================
+    // UTILITIES
+    // ===============================
 
-  async function useHealthPotion() {
-    try {
-      if (!userId) {
-        showNotification("USER_ID not set!", "error");
-        return false;
-      }
-
-      const fd = new URLSearchParams();
-      fd.set("user_id", userId);
-
-      const res = await fetch("user_heal_potion.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: fd.toString(),
-      });
-
-      const ct = res.headers.get("content-type") || "";
-      const raw = await res.text();
-      let data = null;
-      if (ct.includes("application/json")) {
+    async function useHealthPotion() {
         try {
-          data = JSON.parse(raw);
-        } catch {}
-      }
+            if (!userId) {
+                showNotification("USER_ID not set!", "error");
+                return false;
+            }
 
-      if (!res.ok || !data) {
-        showNotification(
-          data?.message || raw.slice(0, 200) || `HTTP ${res.status}`,
-          "error",
+            const fd = new URLSearchParams();
+            fd.set("user_id", userId);
+
+            const res = await fetch("user_heal_potion.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: fd.toString(),
+            });
+
+            const ct = res.headers.get("content-type") || "";
+            const raw = await res.text();
+            let data = null;
+            if (ct.includes("application/json")) {
+                try {
+                    data = JSON.parse(raw);
+                } catch {}
+            }
+
+            if (!res.ok || !data) {
+                showNotification(
+                    data?.message || raw.slice(0, 200) || `HTTP ${res.status}`,
+                    "error",
+                );
+                return false;
+            }
+            if (String(data.status).trim() === "success") {
+                showNotification(data.message || "Healed!", "success");
+                return true;
+            } else {
+                showNotification(data.message || "Heal failed.", "error");
+                return false;
+            }
+        } catch (e) {
+            console.log(e);
+            showNotification("Network error.", "error");
+            return false;
+        }
+    }
+
+    function addMenuLinkAfter(afterLabel, newUrl, newTitle, newIcon = "✨") {
+        // Find the anchor with the matching label text
+        const targetLink = [...document.querySelectorAll(".side-nav-item")].find(
+            (el) =>
+            el.querySelector(".side-label")?.textContent.trim() === afterLabel,
         );
-        return false;
-      }
-      if (String(data.status).trim() === "success") {
-        showNotification(data.message || "Healed!", "success");
-        return true;
-      } else {
-        showNotification(data.message || "Heal failed.", "error");
-        return false;
-      }
-    } catch (e) {
-      console.log(e);
-      showNotification("Network error.", "error");
-      return false;
-    }
-  }
 
-  function addMenuLinkAfter(afterLabel, newUrl, newTitle, newIcon = "✨") {
-    // Find the anchor with the matching label text
-    const targetLink = [...document.querySelectorAll(".side-nav-item")].find(
-      (el) =>
-        el.querySelector(".side-label")?.textContent.trim() === afterLabel,
-    );
+        if (!targetLink) {
+            console.warn(`Menu item "${afterLabel}" not found.`);
+            return;
+        }
 
-    if (!targetLink) {
-      console.warn(`Menu item "${afterLabel}" not found.`);
-      return;
-    }
+        // Create the new menu item
+        const newLink = document.createElement("a");
+        newLink.classList.add("side-nav-item");
+        newLink.href = newUrl;
 
-    // Create the new menu item
-    const newLink = document.createElement("a");
-    newLink.classList.add("side-nav-item");
-    newLink.href = newUrl;
+        const pathname = window.location.pathname;
+        if (pathname.includes(newUrl)) {
+            newLink.classList.add("active");
+        }
 
-    const pathname = window.location.pathname;
-    if (pathname.includes(newUrl)) {
-      newLink.classList.add("active");
-    }
-
-    newLink.innerHTML = `
+        newLink.innerHTML = `
       <span class="side-icon">${newIcon}</span>
       <span class="side-label">${newTitle}</span>
     `;
 
-    // Insert after the target
-    targetLink.insertAdjacentElement("afterend", newLink);
-    return newLink;
-  }
+        // Insert after the target
+        targetLink.insertAdjacentElement("afterend", newLink);
+        return newLink;
+    }
 
-  // ---------------------------- Top Bar ------------------------------- //
+    // ---------------------------- Top Bar ------------------------------- //
 
-  const { container: betterGameTopBarToggle } = createSettingsInput({
-    key: "ui-improvements:betterGameTopBar",
-    label: "Better Header",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
+    const { container: betterGameTopBarToggle } = createSettingsInput({
+        key: "ui-improvements:betterGameTopBar",
+        label: "Better Header",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
 
-  const betterGameTopBar = Storage.get(
-    "ui-improvements:betterGameTopBar",
-    true,
-  );
-  if (betterGameTopBar) {
-    GM_addStyle(`
+    const betterGameTopBar = Storage.get(
+        "ui-improvements:betterGameTopBar",
+        true,
+    );
+    if (betterGameTopBar) {
+        GM_addStyle(`
       body {
         margin-bottom: 35px;
       }
@@ -289,782 +289,1097 @@ v2.2.2:
         }
       }
     `);
-    const gtbleft = document.querySelector(".gtb-left");
-    if (gtbleft) {
-      // wrap the top bar, even on small screens.
-      gtbleft.style.setProperty("flex-wrap", "wrap", "important");
-    }
-  }
-
-  // ---------------------------- Top Bar ------------------------------- //
-
-  // -------------------- Menu Sidebar / Navigation -------------------- //
-
-  // Get asterion settings from storage
-  const useAsterion = Storage.get("ui-improvements:useAsterion", false);
-  const asterionValue = parseFloat(
-    Storage.get("ui-improvements:asterionValue", 1.5),
-  );
-  const useBetterAttackButtons = Storage.get(
-    "ui-improvements:useBetterAttackButtons",
-    true,
-  );
-
-  const { container: useCustomNavigationToggle } = createSettingsInput({
-    key: "ui-improvements:useCustomNavigation",
-    label: "Custom Navigation",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
-
-  const { container: useBetterAttackButtonsToggle } = createSettingsInput({
-    key: "ui-improvements:useBetterAttackButtons",
-    label: "Better Attack Buttons",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
-
-  const { container: asterionValueContainer } = createSettingsInput({
-    key: "ui-improvements:asterionValue",
-    label: "Asterion Multiplier",
-    defaultValue: 1.5,
-    type: "number",
-    inputProps: {
-      step: 0.5,
-      style: { width: "100px" },
-    },
-    containerProps: {
-      style: { display: useAsterion ? "flex" : "none" },
-    },
-  });
-
-  const { container: useAsterionToggle } = createSettingsInput({
-    key: "ui-improvements:useAsterion",
-    label: "Use Asterion",
-    defaultValue: false,
-    type: "checkbox",
-    inputProps: { slider: true },
-    onChange: (value) => {
-      asterionValueContainer.style.display = value ? "flex" : "none";
-    },
-  });
-
-  addSettingsGroup("global", "Global Settings", "Global settings", [
-    useCustomNavigationToggle,
-    betterGameTopBarToggle,
-    useBetterAttackButtonsToggle,
-    useAsterionToggle,
-    asterionValueContainer,
-  ]);
-
-  const useCustomNavigation = Storage.get(
-    "ui-improvements:useCustomNavigation",
-    true,
-  );
-
-  if (useCustomNavigation) {
-    // Find the event link by its label
-    const eventLink = [...document.querySelectorAll(".side-nav-item")].find(
-      (el) =>
-        el.querySelector(".side-label")?.textContent.trim() ===
-        "Emberfall Event",
-    );
-
-    eventLink.href = "/event_page.php?event=8";
-
-    // // Move event link to the bottom of the menu
-    // if (eventLink) {
-    //   addMenuLinkAfter(
-    //     "Battle Pass",
-    //     eventLink.href,
-    //     eventLink.querySelector(".side-label").textContent,
-    //     eventLink.querySelector(".side-icon").textContent
-    //   );
-    //   eventLink.remove();
-    // }
-
-    // Find the "Home" link by its label text
-    const homeLink = [...document.querySelectorAll(".side-nav-item")].find(
-      (el) => el.querySelector(".side-label")?.textContent.trim() === "Home",
-    );
-
-    if (homeLink) {
-      addMenuLinkAfter(
-        "Emberfall Event",
-        "/active_wave.php?event=8&wave=101",
-        "Arcane Wild Fringe",
-        "🌊 ",
-      );
-
-      addMenuLinkAfter(
-        "Home",
-        "/active_wave.php?gate=3&wave=8",
-        "Wave 3",
-        "🌊",
-      );
-
-      addMenuLinkAfter(
-        "Home",
-        "/active_wave.php?gate=5&wave=9",
-        "Olympus",
-        "🏛️",
-      );
-
-      addMenuLinkAfter(
-        "Merchant",
-        "/black_merchant.php",
-        "Black Merchant",
-        "💀",
-      );
-
-      addMenuLinkAfter(
-        "Blacksmith",
-        "/legendary_forge.php",
-        "Legendary Forge",
-        "🔥",
-      );
-
-      addMenuLinkAfter(
-        "Legendary Forge",
-        "/legendary_decraft.php",
-        "Decraft Altar",
-        "🛕",
-      );
-
-      addMenuLinkAfter(
-        "Battle Pass",
-        "/weekly.php",
-        "Weekly Leaderboard",
-        "🏆",
-      );
-
-      addMenuLinkAfter("Inventory", "/shadow_army.php", "Shadow Army", "☠");
-
-      const settingsTrigger = addMenuLinkAfter(
-        "Weekly Leaderboard",
-        "#",
-        "Veyra-Hud Settings",
-        "⚙️",
-      );
-      settingsTrigger.addEventListener("click", () => {
-        if (typeof settingsDrawer?.open === "function") {
-          settingsDrawer.open();
+        const gtbleft = document.querySelector(".gtb-left");
+        if (gtbleft) {
+            // wrap the top bar, even on small screens.
+            gtbleft.style.setProperty("flex-wrap", "wrap", "important");
         }
-      });
-
-      addMenuLinkAfter("Guild", "/guild_dungeon.php", "Guild Dungeons", "🕳️");
-
-      // EVENT LINK
-      // addMenuLinkAfter("Home", "/lunar_plague.php", "Lunar Plague Event", "☣️");
-      // addMenuLinkAfter("Home", "/event_page.php?event=7", "Emberfall", "🍂");
-      // addMenuLinkAfter(
-      //   "Emberfall",
-      //   "active_wave.php?event=7&wave=4",
-      //   "Wilderness Z1",
-      //   "🌿"
-      // );
     }
-  }
-  // -------------------- Menu Sidebar / Navigation -------------------- //
 
-  // -------------------------- Battle Page ---------------------------- //
-  // Change the slash buttons to show stamina usage with asterion multiplier
-  if (useBetterAttackButtons) {
-    document.querySelectorAll(".attack-btn").forEach((btn) => {
-      // CASE 1: buttons with MP / STAM layout
-      const costEl = btn.querySelector(".skill-cost");
-      if (costEl) {
-        const text = costEl.textContent.trim();
+    // ---------------------------- Top Bar ------------------------------- //
 
-        // Match "20 MP / 200 STAM"
-        const match = text.match(/(\d+)\s*MP\s*\/\s*(\d+)\s*STAM/i);
-        if (!match) return;
+    // -------------------- Menu Sidebar / Navigation -------------------- //
 
-        const mp = match[1];
-        const baseStam = Number(match[2]);
-        const finalStam = useAsterion ? baseStam * asterionValue : baseStam;
-
-        costEl.textContent = `${mp} MP / ${finalStam} STAM`;
-        return;
-      }
-
-      // CASE 2: simple text buttons
-      const text = btn.textContent.trim();
-
-      // Try to extract stamina cost from "(X STAMINA)"
-      const match = text.match(/\((\d+)\s*STAMINA\)/i);
-
-      const baseCost = match ? Number(match[1]) : 1; // Slash defaults to 1
-      const finalCost = useAsterion ? baseCost * asterionValue : baseCost;
-
-      // Remove any existing "(...)" part to get clean name
-      const name = text.replace(/\s*\(.*?\)\s*/, "");
-
-      // Update button text
-      btn.textContent = `${name} (${finalCost})`;
-    });
-  }
-  // -------------------------- Battle Page ---------------------------- //
-
-  // ---------------------------- Pets Page ---------------------------- //
-  if (document.location.href.includes("pets.php")) {
-    document.querySelectorAll(".slot-box").forEach((slot) => {
-      // Find pet name (from image alt or info button)
-      const name =
-        slot.querySelector("img")?.alt ||
-        slot.querySelector(".pet-info-overlay")?.dataset.name ||
-        "";
-
-      if (!/Asterion/i.test(name)) return;
-
-      // Look for multiplier text
-      const powerText =
-        slot.querySelector(".pet-power")?.textContent ||
-        slot.querySelector(".pet-info-overlay")?.dataset.desc ||
-        "";
-
-      // Match "x3", "x 3", etc.
-      const match = powerText.match(/x\s*(\d+)/i);
-      if (!match) return;
-
-      const foundAsterionValue = Number(match[1]);
-      if (asterionValue !== foundAsterionValue) {
-        Storage.set("ui-improvements:asterionValue", foundAsterionValue);
-      }
-    });
-  }
-
-  // --------------------- Adventurer's Guild Page --------------------- //
-  // Align the accept quest button on the Adventurer's Guild to the bottom of the element
-  document.querySelectorAll(".quest-side").forEach((el) => {
-    el.style.marginTop = "auto";
-  });
-  // --------------------- Adventurer's Guild Page --------------------- //
-
-  // ------------------------ Battle Pass Page ------------------------- //
-
-  const { container: syncBattlePassScrollbarsToggle } = createSettingsInput({
-    key: "ui-improvements:syncBattlePassScrollbars",
-    label: "Sync Scrollbars",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
-
-  const { container: scrollToCurrentLevelToggle } = createSettingsInput({
-    key: "ui-improvements:scrollToCurrentLevel",
-    label: "Auto Scroll to Current Level",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
-
-  addSettingsGroup(
-    "battlepass-page",
-    "BattlePass Settings",
-    "Settings related to the Battlepass page",
-    [syncBattlePassScrollbarsToggle, scrollToCurrentLevelToggle],
-  );
-
-  const syncBattlePassScrollbars = Storage.get(
-    "ui-improvements:syncBattlePassScrollbars",
-    true,
-  );
-  const scrollToCurrentLevel = Storage.get(
-    "ui-improvements:scrollToCurrentLevel",
-    true,
-  );
-
-  // sync scroll bars
-  function syncScrollBars() {
-    const scrollContainers = Array.from(
-      document.querySelectorAll(".bp-scroll"),
+    // Get asterion settings from storage
+    const useAsterion = Storage.get("ui-improvements:useAsterion", false);
+    const asterionValue = parseFloat(
+        Storage.get("ui-improvements:asterionValue", 1.5),
+    );
+    const useBetterAttackButtons = Storage.get(
+        "ui-improvements:useBetterAttackButtons",
+        true,
     );
 
-    let isSyncing = false;
-
-    scrollContainers.forEach((container) => {
-      container.addEventListener("scroll", () => {
-        if (isSyncing) return;
-        isSyncing = true;
-
-        const x = container.scrollLeft;
-
-        scrollContainers.forEach((other) => {
-          if (other !== container) {
-            other.scrollLeft = x;
-          }
-        });
-
-        isSyncing = false;
-      });
+    const { container: useCustomNavigationToggle } = createSettingsInput({
+        key: "ui-improvements:useCustomNavigation",
+        label: "Custom Navigation",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
     });
-  }
 
-  function getHighestReachedLevel() {
-    const reachedBadges = [...document.querySelectorAll(".lvl-badge")].filter(
-      (b) => b.textContent.trim() === "Reached",
+    const { container: useBetterAttackButtonsToggle } = createSettingsInput({
+        key: "ui-improvements:useBetterAttackButtons",
+        label: "Better Attack Buttons",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
+
+    const { container: asterionValueContainer } = createSettingsInput({
+        key: "ui-improvements:asterionValue",
+        label: "Asterion Multiplier",
+        defaultValue: 1.5,
+        type: "number",
+        inputProps: {
+            step: 0.5,
+            style: { width: "100px" },
+        },
+        containerProps: {
+            style: { display: useAsterion ? "flex" : "none" },
+        },
+    });
+
+    const { container: useAsterionToggle } = createSettingsInput({
+        key: "ui-improvements:useAsterion",
+        label: "Use Asterion",
+        defaultValue: false,
+        type: "checkbox",
+        inputProps: { slider: true },
+        onChange: (value) => {
+            asterionValueContainer.style.display = value ? "flex" : "none";
+        },
+    });
+
+    addSettingsGroup("global", "Global Settings", "Global settings", [
+        useCustomNavigationToggle,
+        betterGameTopBarToggle,
+        useBetterAttackButtonsToggle,
+        useAsterionToggle,
+        asterionValueContainer,
+    ]);
+
+    const useCustomNavigation = Storage.get(
+        "ui-improvements:useCustomNavigation",
+        true,
     );
 
-    if (reachedBadges.length === 0) return null;
-
-    // Extract L# from the sibling badge
-    const levels = reachedBadges
-      .map((badge) => {
-        const parent = badge.parentElement;
-        const levelBadge = parent.querySelector(
-          '.lvl-badge:not([style*="Reached"])',
+    if (useCustomNavigation) {
+        // Find the event link by its label
+        const eventLink = [...document.querySelectorAll(".side-nav-item")].find(
+            (el) =>
+            el.querySelector(".side-label")?.textContent.trim() ===
+            "Emberfall Event",
         );
-        if (!levelBadge) return null;
-        const match = levelBadge.textContent.trim().match(/^L(\d+)$/);
-        return match ? parseInt(match[1], 10) : null;
-      })
-      .filter((n) => n !== null);
-    return Math.max(...levels);
-  }
 
-  function scrollToLevel(level) {
-    const scrollContainers = document.querySelectorAll(".bp-scroll");
-    if (!scrollContainers) return;
-    for (const scrollContainer of scrollContainers) {
-      const cards = [...scrollContainer.querySelectorAll(".level-card")];
+        eventLink.href = "/event_page.php?event=8";
 
-      let targetCard = cards.find((card) => {
-        const badge = card.querySelector(".lvl-top .lvl-badge");
-        if (!badge) return false;
-        return badge.textContent.trim() === `L${level}`;
-      });
+        // // Move event link to the bottom of the menu
+        // if (eventLink) {
+        //   addMenuLinkAfter(
+        //     "Battle Pass",
+        //     eventLink.href,
+        //     eventLink.querySelector(".side-label").textContent,
+        //     eventLink.querySelector(".side-icon").textContent
+        //   );
+        //   eventLink.remove();
+        // }
 
-      if (!targetCard) return;
-      const offset =
-        targetCard.offsetLeft -
-        scrollContainer.clientWidth / 2 +
-        targetCard.clientWidth / 2;
+        // Find the "Home" link by its label text
+        const homeLink = [...document.querySelectorAll(".side-nav-item")].find(
+            (el) => el.querySelector(".side-label")?.textContent.trim() === "Home",
+        );
 
-      scrollContainer.scrollTo({
-        left: offset,
-        behavior: "smooth",
-      });
+        if (homeLink) {
+            addMenuLinkAfter(
+                "Emberfall Event",
+                "/active_wave.php?event=8&wave=101",
+                "Arcane Wild Fringe",
+                "🌊 ",
+            );
+
+            addMenuLinkAfter(
+                "Home",
+                "/active_wave.php?gate=3&wave=8",
+                "Wave 3",
+                "🌊",
+            );
+
+            addMenuLinkAfter(
+                "Home",
+                "/active_wave.php?gate=5&wave=9",
+                "Olympus",
+                "🏛️",
+            );
+
+            addMenuLinkAfter(
+                "Merchant",
+                "/black_merchant.php",
+                "Black Merchant",
+                "💀",
+            );
+
+            addMenuLinkAfter(
+                "Blacksmith",
+                "/legendary_forge.php",
+                "Legendary Forge",
+                "🔥",
+            );
+
+            addMenuLinkAfter(
+                "Legendary Forge",
+                "/legendary_decraft.php",
+                "Decraft Altar",
+                "🛕",
+            );
+
+            addMenuLinkAfter(
+                "Battle Pass",
+                "/weekly.php",
+                "Weekly Leaderboard",
+                "🏆",
+            );
+
+            addMenuLinkAfter("Inventory", "/shadow_army.php", "Shadow Army", "☠");
+
+            const settingsTrigger = addMenuLinkAfter(
+                "Weekly Leaderboard",
+                "#",
+                "Veyra-Hud Settings",
+                "⚙️",
+            );
+            settingsTrigger.addEventListener("click", () => {
+                if (typeof settingsDrawer?.open === "function") {
+                    settingsDrawer.open();
+                }
+            });
+
+            addMenuLinkAfter("Guild", "/guild_dungeon.php", "Guild Dungeons", "🕳️");
+
+            // EVENT LINK
+            // addMenuLinkAfter("Home", "/lunar_plague.php", "Lunar Plague Event", "☣️");
+            // addMenuLinkAfter("Home", "/event_page.php?event=7", "Emberfall", "🍂");
+            // addMenuLinkAfter(
+            //   "Emberfall",
+            //   "active_wave.php?event=7&wave=4",
+            //   "Wilderness Z1",
+            //   "🌿"
+            // );
+        }
     }
-  }
+    // -------------------- Menu Sidebar / Navigation -------------------- //
 
-  async function autoScrollToCurrentLevel() {
-    const level = getHighestReachedLevel();
-    if (!level) return;
-    if (scrollToCurrentLevel) {
-      scrollToLevel(level);
+    // -------------------------- Battle Page ---------------------------- //
+    // Change the slash buttons to show stamina usage with asterion multiplier
+    if (useBetterAttackButtons) {
+        document.querySelectorAll(".attack-btn").forEach((btn) => {
+            // CASE 1: buttons with MP / STAM layout
+            const costEl = btn.querySelector(".skill-cost");
+            if (costEl) {
+                const text = costEl.textContent.trim();
+
+                // Match "20 MP / 200 STAM"
+                const match = text.match(/(\d+)\s*MP\s*\/\s*(\d+)\s*STAM/i);
+                if (!match) return;
+
+                const mp = match[1];
+                const baseStam = Number(match[2]);
+                const finalStam = useAsterion ? baseStam * asterionValue : baseStam;
+
+                costEl.textContent = `${mp} MP / ${finalStam} STAM`;
+                return;
+            }
+
+            // CASE 2: simple text buttons
+            const text = btn.textContent.trim();
+
+            // Try to extract stamina cost from "(X STAMINA)"
+            const match = text.match(/\((\d+)\s*STAMINA\)/i);
+
+            const baseCost = match ? Number(match[1]) : 1; // Slash defaults to 1
+            const finalCost = useAsterion ? baseCost * asterionValue : baseCost;
+
+            // Remove any existing "(...)" part to get clean name
+            const name = text.replace(/\s*\(.*?\)\s*/, "");
+
+            // Update button text
+            btn.textContent = `${name} (${finalCost})`;
+        });
     }
-    await sleep(1000);
-    if (syncBattlePassScrollbars) {
-      syncScrollBars();
+    // -------------------------- Battle Page ---------------------------- //
+
+    // ---------------------------- Pets Page ---------------------------- //
+    if (document.location.href.includes("pets.php")) {
+        document.querySelectorAll(".slot-box").forEach((slot) => {
+            // Find pet name (from image alt or info button)
+            const name =
+                  slot.querySelector("img")?.alt ||
+                  slot.querySelector(".pet-info-overlay")?.dataset.name ||
+                  "";
+
+            if (!/Asterion/i.test(name)) return;
+
+            // Look for multiplier text
+            const powerText =
+                  slot.querySelector(".pet-power")?.textContent ||
+                  slot.querySelector(".pet-info-overlay")?.dataset.desc ||
+                  "";
+
+            // Match "x3", "x 3", etc.
+            const match = powerText.match(/x\s*(\d+)/i);
+            if (!match) return;
+
+            const foundAsterionValue = Number(match[1]);
+            if (asterionValue !== foundAsterionValue) {
+                Storage.set("ui-improvements:asterionValue", foundAsterionValue);
+            }
+        });
     }
-  }
 
-  setTimeout(() => {
-    autoScrollToCurrentLevel();
-  }, 1300);
+    // --------------------- Adventurer's Guild Page --------------------- //
+    // Align the accept quest button on the Adventurer's Guild to the bottom of the element
+    document.querySelectorAll(".quest-side").forEach((el) => {
+        el.style.marginTop = "auto";
+    });
+    // --------------------- Adventurer's Guild Page --------------------- //
 
-  // ------------------------ Battle Pass Page ------------------------- //
+    // ------------------------ Battle Pass Page ------------------------- //
 
-  // -------------------------- Wave X Page ---------------------------- //
-  const {
-    container: enableCustomAttackStrategyToggle,
-    input: enableCustomAttackStrategyInput,
-  } = createSettingsInput({
-    key: "ui-improvements:enableCustomAttackStrategy",
-    label: "Strategic Attack",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
-  // const { container: useParallelJoinsToggle, input: useParallelJoinsInput } =
-  //   createSettingsInput({
-  //     key: "ui-improvements:useParallelJoins",
-  //     label: "Join Mobs in Parallel",
-  //     defaultValue: false,
-  //     type: "checkbox",
-  //     inputProps: { slider: true },
-  //   });
-  const { container: enableLootXFasterToggle } = createSettingsInput({
-    key: "ui-improvements:enableLootXFaster",
-    label: "Faster Loot X",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
-  const { container: enableInBattleCountToggle } = createSettingsInput({
-    key: "ui-improvements:enableInBattleCount",
-    label: "In Battle Count",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
-  const { container: flashHpBarWhenLowContainer } = createSettingsInput({
-    key: "ui-improvements:flashHpBarWhenLow",
-    label: "Flash HP Bar",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
+    const { container: syncBattlePassScrollbarsToggle } = createSettingsInput({
+        key: "ui-improvements:syncBattlePassScrollbars",
+        label: "Sync Scrollbars",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
 
-  const { container: ignoreBossMobsWhenLootingContainer } = createSettingsInput(
-    {
-      key: "ui-improvements:ignoreBossMobsWhenLooting",
-      label: "Ignore Boss Mobs (loot x)",
-      defaultValue: true,
-      type: "checkbox",
-      inputProps: { slider: true },
-    },
-  );
+    const { container: scrollToCurrentLevelToggle } = createSettingsInput({
+        key: "ui-improvements:scrollToCurrentLevel",
+        label: "Auto Scroll to Current Level",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
 
-  const { container: unlockSelectLimitToggle } = createSettingsInput({
-    key: "ui-improvements:unlockSelectLimit",
-    label: "Unlock Select Visible",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
+    addSettingsGroup(
+        "battlepass-page",
+        "BattlePass Settings",
+        "Settings related to the Battlepass page",
+        [syncBattlePassScrollbarsToggle, scrollToCurrentLevelToggle],
+    );
 
-  const { container: disableGateInfoToggle } = createSettingsInput({
-    key: "ui-improvements:disableGateInfoToggle",
-    label: "Disable Gate Info",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
+    const syncBattlePassScrollbars = Storage.get(
+        "ui-improvements:syncBattlePassScrollbars",
+        true,
+    );
+    const scrollToCurrentLevel = Storage.get(
+        "ui-improvements:scrollToCurrentLevel",
+        true,
+    );
 
-  // let showUseParallelToggle = enableCustomAttackStrategyInput.checked;
-  // useParallelJoinsToggle.style.display = showUseParallelToggle
-  //   ? "flex"
-  //   : "none";
+    // sync scroll bars
+    function syncScrollBars() {
+        const scrollContainers = Array.from(
+            document.querySelectorAll(".bp-scroll"),
+        );
 
-  enableCustomAttackStrategyInput.addEventListener("change", () => {
-    // showUseParallelToggle = enableCustomAttackStrategyInput.checked;
+        let isSyncing = false;
+
+        scrollContainers.forEach((container) => {
+            container.addEventListener("scroll", () => {
+                if (isSyncing) return;
+                isSyncing = true;
+
+                const x = container.scrollLeft;
+
+                scrollContainers.forEach((other) => {
+                    if (other !== container) {
+                        other.scrollLeft = x;
+                    }
+                });
+
+                isSyncing = false;
+            });
+        });
+    }
+
+    function getHighestReachedLevel() {
+        const reachedBadges = [...document.querySelectorAll(".lvl-badge")].filter(
+            (b) => b.textContent.trim() === "Reached",
+        );
+
+        if (reachedBadges.length === 0) return null;
+
+        // Extract L# from the sibling badge
+        const levels = reachedBadges
+        .map((badge) => {
+            const parent = badge.parentElement;
+            const levelBadge = parent.querySelector(
+                '.lvl-badge:not([style*="Reached"])',
+            );
+            if (!levelBadge) return null;
+            const match = levelBadge.textContent.trim().match(/^L(\d+)$/);
+            return match ? parseInt(match[1], 10) : null;
+        })
+        .filter((n) => n !== null);
+        return Math.max(...levels);
+    }
+
+    function scrollToLevel(level) {
+        const scrollContainers = document.querySelectorAll(".bp-scroll");
+        if (!scrollContainers) return;
+        for (const scrollContainer of scrollContainers) {
+            const cards = [...scrollContainer.querySelectorAll(".level-card")];
+
+            let targetCard = cards.find((card) => {
+                const badge = card.querySelector(".lvl-top .lvl-badge");
+                if (!badge) return false;
+                return badge.textContent.trim() === `L${level}`;
+            });
+
+            if (!targetCard) return;
+            const offset =
+                  targetCard.offsetLeft -
+                  scrollContainer.clientWidth / 2 +
+                  targetCard.clientWidth / 2;
+
+            scrollContainer.scrollTo({
+                left: offset,
+                behavior: "smooth",
+            });
+        }
+    }
+
+    async function autoScrollToCurrentLevel() {
+        const level = getHighestReachedLevel();
+        if (!level) return;
+        if (scrollToCurrentLevel) {
+            scrollToLevel(level);
+        }
+        await sleep(1000);
+        if (syncBattlePassScrollbars) {
+            syncScrollBars();
+        }
+    }
+
+    setTimeout(() => {
+        autoScrollToCurrentLevel();
+    }, 1300);
+
+    // ------------------------ Battle Pass Page ------------------------- //
+
+    // -------------------------- Wave X Page ---------------------------- //
+    const {
+        container: enableCustomAttackStrategyToggle,
+        input: enableCustomAttackStrategyInput,
+    } = createSettingsInput({
+        key: "ui-improvements:enableCustomAttackStrategy",
+        label: "Strategic Attack",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
+    // const { container: useParallelJoinsToggle, input: useParallelJoinsInput } =
+    //   createSettingsInput({
+    //     key: "ui-improvements:useParallelJoins",
+    //     label: "Join Mobs in Parallel",
+    //     defaultValue: false,
+    //     type: "checkbox",
+    //     inputProps: { slider: true },
+    //   });
+    const { container: enableLootXFasterToggle } = createSettingsInput({
+        key: "ui-improvements:enableLootXFaster",
+        label: "Faster Loot X",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
+    const { container: enableInBattleCountToggle } = createSettingsInput({
+        key: "ui-improvements:enableInBattleCount",
+        label: "In Battle Count",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
+    const { container: flashHpBarWhenLowContainer } = createSettingsInput({
+        key: "ui-improvements:flashHpBarWhenLow",
+        label: "Flash HP Bar",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
+
+    const { container: ignoreBossMobsWhenLootingContainer } = createSettingsInput(
+        {
+            key: "ui-improvements:ignoreBossMobsWhenLooting",
+            label: "Ignore Boss Mobs (loot x)",
+            defaultValue: true,
+            type: "checkbox",
+            inputProps: { slider: true },
+        },
+    );
+
+    const { container: unlockSelectLimitToggle } = createSettingsInput({
+        key: "ui-improvements:unlockSelectLimit",
+        label: "Unlock Select Visible",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
+
+    const { container: disableGateInfoToggle } = createSettingsInput({
+        key: "ui-improvements:disableGateInfoToggle",
+        label: "Disable Gate Info",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
+
+
+
+    // let showUseParallelToggle = enableCustomAttackStrategyInput.checked;
     // useParallelJoinsToggle.style.display = showUseParallelToggle
     //   ? "flex"
     //   : "none";
-  });
 
-  const sortByHp = Storage.get("ui-improvements:sortByHp", false);
-  const filterByHp = Storage.get("ui-improvements:filterByHp", false);
-  const minHpValue = Storage.get("ui-improvements:minHpValue", 0);
-  const maxHpValue = Storage.get(
-    "ui-improvements:maxHpValue",
-    Number.MAX_SAFE_INTEGER,
-  );
-  const unlockSelectLimit = Storage.get(
-    "ui-improvements:unlockSelectLimit",
-    true,
-  );
-  const disableGateInfo = Storage.get(
-    "ui-improvements:disableGateInfoToggle",
-    true,
-  );
-  const ATTACK_COOLDOWN = Storage.get(
-    "ui-improvements:strategicAttackWaitBuffer",
-    1050,
-  );
+    enableCustomAttackStrategyInput.addEventListener("change", () => {
+        // showUseParallelToggle = enableCustomAttackStrategyInput.checked;
+        // useParallelJoinsToggle.style.display = showUseParallelToggle
+        //   ? "flex"
+        //   : "none";
+    });
 
-  const { container: sortMobsByHpInSettingsToggle } = createSettingsInput({
-    key: "ui-improvements:sortByHp",
-    label: "Sort By Hp",
-    defaultValue: false,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
-
-  const { container: minHpValueToggle } = createSettingsInput({
-    key: "ui-improvements:minHpValue",
-    label: "Min Hp",
-    defaultValue: 0,
-    type: "text",
-    inputProps: {
-      min: 0,
-      max: maxHpValue,
-      placeholder: "min hp",
-      style: { width: "100px" },
-    },
-    containerProps: {
-      style: { display: filterByHp ? "flex" : "none" },
-    },
-  });
-
-  const { container: maxHpValueToggle } = createSettingsInput({
-    key: "ui-improvements:maxHpValue",
-    label: "Max Hp",
-    defaultValue: Number.MAX_SAFE_INTEGER,
-    type: "text",
-    inputProps: {
-      min: 1,
-      max: Number.MAX_SAFE_INTEGER,
-      placeholder: "max hp",
-      style: { width: "100px" },
-    },
-    containerProps: {
-      style: { display: filterByHp ? "flex" : "none" },
-    },
-  });
-
-  const { container: filterMobsByHpInSettingsToggle } = createSettingsInput({
-    key: "ui-improvements:filterByHp",
-    label: "Filter By Hp",
-    defaultValue: false,
-    type: "checkbox",
-    inputProps: { slider: true },
-    onChange: (value) => {
-      minHpValueToggle.style.display = value ? "flex" : "none";
-      maxHpValueToggle.style.display = value ? "flex" : "none";
-    },
-  });
-
-  const { container: strategicAttackWaitBufferContainer } = createSettingsInput(
-    {
-      key: "ui-improvements:strategicAttackWaitBuffer",
-      label: "Minimum Delay Between Strategic Attacks (ms)",
-      defaultValue: 1000,
-      type: "number",
-      inputProps: {
-        style: { width: "100px" },
-      },
-    },
-  );
-
-  addSettingsGroup(
-    "wave-filtering",
-    "Wave Filtering",
-    "settings related to wave filtering",
-    [
-      unlockSelectLimitToggle,
-      sortMobsByHpInSettingsToggle,
-      filterMobsByHpInSettingsToggle,
-      minHpValueToggle,
-      maxHpValueToggle,
-    ],
-  );
-
-  addSettingsGroup(
-    "wave-page",
-    "Wave Page",
-    "Settings related to the wave page.",
-    [
-      enableCustomAttackStrategyToggle,
-      strategicAttackWaitBufferContainer,
-      // useParallelJoinsToggle,
-      enableInBattleCountToggle,
-      enableLootXFasterToggle,
-      flashHpBarWhenLowContainer,
-      ignoreBossMobsWhenLootingContainer,
-      disableGateInfoToggle,
-    ],
-  );
-
-  if (window.location.href.includes("/active_wave.php")) {
-    // ---------------- constants ------------------ //
-    let inBattleCount = 0;
-    const hideDeadRaw = getCookie("hide_dead_monsters");
-    const HIDE_DEAD_MONSTERS = hideDeadRaw === "1" || hideDeadRaw === "true";
-    const PAGINATION_PAGE_SIZE = 200;
-
-    // -------------- flash hp bar ------------------ //
-    const flashWhenLow = Storage.get("ui-improvements:flashHpBarWhenLow", true);
-    if (flashWhenLow) {
-      const hpFill = document.querySelector(".res-fill.stamina");
-      if (hpFill) {
-        const hpPercent = parseFloat(hpFill.style.width);
-
-        if (hpPercent < 10) {
-          hpFill.parentElement.classList.add("flash-red-border", "needs-heal");
-        } else {
-          hpFill.parentElement.classList.remove(
-            "flash-red-border",
-            "needs-heal",
-          );
-        }
-      }
-    }
-    // -------------- flash hp bar ------------------ //
-
-    // -------------- Loot X Faster ---------------- //
-
-    function getEligibleMobs(doc = document) {
-      const ignoreBossMobsWhenLooting = Storage.get(
-        "ui-improvements:ignoreBossMobsWhenLooting",
-        true,
-      );
-      const els = Array.from(
-        doc.querySelectorAll('.monster-card[data-eligible="1"]'),
-      );
-      return els
-        .filter((el) => {
-          const name = el.dataset.name?.toLowerCase().trim();
-          if (ignoreBossMobsWhenLooting) {
-            if (LOOTING_BLACKLIST_SET.has(name)) {
-              return false;
-            }
-          }
-          return true;
-        })
-        .map((el) => parseInt(el.dataset.monsterId, 10));
-    }
-
-    async function getLootableMobs(numMobs = 1) {
-      const unclaimedKills = [...document.querySelectorAll(".unclaimed-pill")]
-        .find((el) => el.textContent.includes("Unclaimed kills"))
-        ?.querySelector(".count")?.textContent;
-
-      const unclaimedKillsNumber =
-        Number(parseInt(unclaimedKills.replace(/\D/g, ""), 10)) || 200;
-
-      const actualNumberToLoot = Math.min(numMobs, unclaimedKillsNumber);
-      const numPages = Math.ceil(unclaimedKillsNumber / PAGINATION_PAGE_SIZE);
-
-      const url = new URL(window.location.href);
-      const targetIds = new Set(getEligibleMobs());
-      $stat.textContent = `Gathering page 1, collected: ${targetIds.size}/${actualNumberToLoot}`;
-      if (targetIds.size < actualNumberToLoot) {
-        for (let i = 2; i <= numPages; i += 1) {
-          url.searchParams.set("dead_page", i.toString());
-          $stat.textContent = `Gathering page ${i}, collected: ${targetIds.size}/${actualNumberToLoot}`;
-          try {
-            const doc = await internalFetch(url.toString());
-            const eligibleMobIds = getEligibleMobs(doc);
-            for (const mobId of eligibleMobIds) {
-              targetIds.add(mobId);
-            }
-            if (targetIds.size >= actualNumberToLoot) {
-              break;
-            }
-          } catch (e) {
-            console.error(
-              `Error encountered while fetching dead mobs on page ${i}:`,
-              e,
-            );
-            $stat.textContent = `Error encountered while fetching dead mobs on page ${i}.... continuing`;
-            await sleep(3000);
-          }
-        }
-      }
-
-      return [...targetIds].slice(0, actualNumberToLoot);
-    }
-
-    const enableLootXFaster = Storage.get(
-      "ui-improvements:enableLootXFaster",
-      true,
+    const sortByHp = Storage.get("ui-improvements:sortByHp", false);
+    const filterByHp = Storage.get("ui-improvements:filterByHp", false);
+    const minHpValue = Storage.get("ui-improvements:minHpValue", 0);
+    const maxHpValue = Storage.get(
+        "ui-improvements:maxHpValue",
+        Number.MAX_SAFE_INTEGER,
     );
-    const $stat = document.getElementById("lootStatus");
-    $stat.style.flexBasis = "100%";
-    $stat.parentElement.style.flexWrap = "wrap";
-    if (enableLootXFaster) {
-      function overrideLootX() {
-        const btnLootX = document.getElementById("btnLootX");
-        if (!btnLootX) return;
+    const unlockSelectLimit = Storage.get(
+        "ui-improvements:unlockSelectLimit",
+        true,
+    );
+    const disableGateInfo = Storage.get(
+        "ui-improvements:disableGateInfoToggle",
+        true,
+    );
+    const ATTACK_COOLDOWN = Storage.get(
+        "ui-improvements:strategicAttackWaitBuffer",
+        1050,
+    );
 
-        const customBtn = document.createElement("button");
-        customBtn.id = "btnCustomLoot";
-        customBtn.type = "button";
-        customBtn.className = "custom-loot-btn";
-        customBtn.textContent = "💰 Loot X monsters (super fast)";
+    const { container: sortMobsByHpInSettingsToggle } = createSettingsInput({
+        key: "ui-improvements:sortByHp",
+        label: "Sort By Hp",
+        defaultValue: false,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
 
-        btnLootX.insertAdjacentElement("afterend", customBtn);
-        btnLootX.textContent = "💰 Loot X monsters (vanilla)";
+    const { container: minHpValueToggle } = createSettingsInput({
+        key: "ui-improvements:minHpValue",
+        label: "Min Hp",
+        defaultValue: 0,
+        type: "text",
+        inputProps: {
+            min: 0,
+            max: maxHpValue,
+            placeholder: "min hp",
+            style: { width: "100px" },
+        },
+        containerProps: {
+            style: { display: filterByHp ? "flex" : "none" },
+        },
+    });
 
-        const BATCH_SIZE = 200;
+    const { container: enableLootFilterToggle } = createSettingsInput({
+        key: "ui-improvements:showLootMonsterFilter",
+        id: "showLootMonsterFilter",
+        label: "Show Loot Monster Filter",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+        onChange: () => {
+            updateLootMonsterFilterVisibility();
+        },
+    });
 
-        customBtn.addEventListener("click", async () => {
-          customBtn.classList.add("is-running");
-          customBtn.textContent = "Working...";
-          btnLootX.classList.add("is-running");
-          btnLootX.textContent = "Working...";
+    const { container: maxHpValueToggle } = createSettingsInput({
+        key: "ui-improvements:maxHpValue",
+        label: "Max Hp",
+        defaultValue: Number.MAX_SAFE_INTEGER,
+        type: "text",
+        inputProps: {
+            min: 1,
+            max: Number.MAX_SAFE_INTEGER,
+            placeholder: "max hp",
+            style: { width: "100px" },
+        },
+        containerProps: {
+            style: { display: filterByHp ? "flex" : "none" },
+        },
+    });
 
-          const n = Math.max(1, parseInt($input.value || "1", 10));
-          $stat.textContent = `Gathering ${n.toLocaleString()} mobs to loot...`;
-          const targetIds = await getLootableMobs(n);
+    const { container: filterMobsByHpInSettingsToggle } = createSettingsInput({
+        key: "ui-improvements:filterByHp",
+        label: "Filter By Hp",
+        defaultValue: false,
+        type: "checkbox",
+        inputProps: { slider: true },
+        onChange: (value) => {
+            minHpValueToggle.style.display = value ? "flex" : "none";
+            maxHpValueToggle.style.display = value ? "flex" : "none";
+        },
+    });
 
-          if (!targetIds.length) {
-            $stat.textContent = "No eligible dead monsters you joined.";
-            return;
-          }
+    const { container: strategicAttackWaitBufferContainer } = createSettingsInput(
+        {
+            key: "ui-improvements:strategicAttackWaitBuffer",
+            label: "Minimum Delay Between Strategic Attacks (ms)",
+            defaultValue: 1000,
+            type: "number",
+            inputProps: {
+                style: { width: "100px" },
+            },
+        },
+    );
 
-          let ok = 0;
-          let fail = 0;
-          let totalExp = 0;
-          let totalGold = 0;
-          let totalDmg = 0;
-          const allItems = [];
-          const allNotes = [];
+    addSettingsGroup(
+        "wave-filtering",
+        "Wave Filtering",
+        "settings related to wave filtering",
+        [
+            unlockSelectLimitToggle,
+            sortMobsByHpInSettingsToggle,
+            filterMobsByHpInSettingsToggle,
+            minHpValueToggle,
+            maxHpValueToggle,
+        ],
+    );
 
-          const total = targetIds.length;
+    addSettingsGroup(
+        "wave-page",
+        "Wave Page",
+        "Settings related to the wave page.",
+        [
+            enableCustomAttackStrategyToggle,
+            strategicAttackWaitBufferContainer,
+            // useParallelJoinsToggle,
+            enableInBattleCountToggle,
+            enableLootXFasterToggle,
+            enableLootFilterToggle,
+            flashHpBarWhenLowContainer,
+            ignoreBossMobsWhenLootingContainer,
+            disableGateInfoToggle,
+        ],
+    );
 
-          // Split into batches of 200
-          for (let start = 0; start < total; start += BATCH_SIZE) {
-            const batch = targetIds.slice(start, start + BATCH_SIZE);
+    if (window.location.href.includes("/active_wave.php")) {
+        // ---------------- constants ------------------ //
+        let inBattleCount = 0;
+        const hideDeadRaw = getCookie("hide_dead_monsters");
+        const HIDE_DEAD_MONSTERS = hideDeadRaw === "1" || hideDeadRaw === "true";
+        const PAGINATION_PAGE_SIZE = 200;
 
-            $stat.textContent = `Looting ${start + 1}-${
-              start + batch.length
-            }/${total}... (success: ${ok}, fail: ${fail})`;
+        // -------------- flash hp bar ------------------ //
+        const flashWhenLow = Storage.get("ui-improvements:flashHpBarWhenLow", true);
+        if (flashWhenLow) {
+            const hpFill = document.querySelector(".res-fill.stamina");
+            if (hpFill) {
+                const hpPercent = parseFloat(hpFill.style.width);
 
-            const promises = batch.map(async (targetId) => {
-              try {
-                const res = await lootMonster(targetId);
-
-                if (res.ok) {
-                  ok++;
-                  totalExp += res.rewards.exp;
-                  totalGold += res.rewards.gold;
-                  totalDmg += res.rewards.damage_dealt;
-
-                  if (res.items?.length) {
-                    allItems.push(...res.items);
-                  } else if (res.note) {
-                    allNotes.push(res.note);
-                  }
-
-                  const el = document.querySelector(
-                    `.monster-card[data-monster-id="${targetId}"]`,
-                  );
-                  if (el) el.setAttribute("data-eligible", "0");
+                if (hpPercent < 10) {
+                    hpFill.parentElement.classList.add("flash-red-border", "needs-heal");
                 } else {
-                  fail++;
-                  if (res.note) allNotes.push(res.note);
+                    hpFill.parentElement.classList.remove(
+                        "flash-red-border",
+                        "needs-heal",
+                    );
                 }
-              } catch {
-                fail++;
-                allNotes.push("Server error");
-              }
+            }
+        }
+        // -------------- flash hp bar ------------------ //
+
+        // -------------- Loot X Faster ---------------- //
+
+        // -------------- Loot Monster Name Filter + Visual Filter + Counts ----------------
+
+        const LOOT_FILTER_KEY = "ui-improvements:lootMonsterNameFilter";
+
+
+
+        function normalizeMonsterName(name = "") {
+            return String(name).toLowerCase().trim();
+        }
+
+        function getSelectedLootMonsterName() {
+            return normalizeMonsterName(Storage.get(LOOT_FILTER_KEY, ""));
+        }
+
+        function getLootMonsterCards(doc = document) {
+            return Array.from(doc.querySelectorAll('.monster-card[data-eligible="1"]'));
+        }
+
+        function getLootMonsterCounts(doc = document) {
+            const ignoreBossMobsWhenLooting = Storage.get(
+                "ui-improvements:ignoreBossMobsWhenLooting",
+                true
+            );
+
+            const counts = new Map();
+
+            getLootMonsterCards(doc).forEach((el) => {
+                const name = normalizeMonsterName(el.dataset.name);
+                if (!name) return;
+
+                if (ignoreBossMobsWhenLooting && LOOTING_BLACKLIST_SET.has(name)) return;
+
+                counts.set(name, (counts.get(name) || 0) + 1);
             });
 
-            // Wait for this batch before starting the next
-            await Promise.all(promises);
-          }
+            return counts;
+        }
 
-          $stat.textContent = `Done. Looted ${ok}, failed ${fail}.`;
-          customBtn.classList.remove("is-running");
-          customBtn.textContent = "💰 Loot X monsters (super fast)";
-          btnLootX.classList.remove("is-running");
-          btnLootX.textContent = "💰 Loot X monsters (vanilla)";
+        function getLootMonsterNames(doc = document) {
+            return Array.from(getLootMonsterCounts(doc).keys());
+        }
 
-          openBatchLootModal(
-            {
-              processed: `${ok + fail}/${total}`,
-              success: ok,
-              fail,
-              exp: totalExp,
-              gold: totalGold,
-              dmg: totalDmg,
-            },
-            allItems,
-            allNotes,
-          );
-        });
-      }
+        function titleCaseMonsterName(name = "") {
+            return String(name)
+                .split(" ")
+                .filter(Boolean)
+                .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                .join(" ");
+        }
 
-      overrideLootX();
-    }
+        function updateLootMonsterVisualFilter() {
+            const selected = getSelectedLootMonsterName();
+            const cards = getLootMonsterCards(document);
 
-    GM_addStyle(`
+            let shown = 0;
+            let hidden = 0;
+
+            cards.forEach((el) => {
+                const name = normalizeMonsterName(el.dataset.name);
+                const shouldShow = !selected || name === selected;
+
+                el.style.display = shouldShow ? "" : "none";
+
+                if (shouldShow) shown += 1;
+                else hidden += 1;
+            });
+
+            const summary = document.getElementById("lootMonsterFilterSummary");
+            if (summary) {
+                const label = selected ? titleCaseMonsterName(selected) : "All monsters";
+                summary.textContent = `${label}: ${shown} shown`;
+
+                if (hidden > 0) {
+                    summary.textContent += `, ${hidden} hidden`;
+                }
+            }
+        }
+
+        function updateLootMonsterCountDisplay() {
+            const counts = getLootMonsterCounts(document);
+            const total = Array.from(counts.values()).reduce((sum, n) => sum + n, 0);
+
+            const countBox = document.getElementById("lootMonsterCountBox");
+            const select = document.getElementById("lootMonsterNameFilter");
+
+            if (!countBox || !select) return;
+
+            const selected = getSelectedLootMonsterName();
+
+            countBox.innerHTML = "";
+
+            const totalLine = document.createElement("div");
+            totalLine.style.cssText = "font-weight:700;margin-bottom:4px;";
+            totalLine.textContent = `Lootable monsters: ${total}`;
+            countBox.appendChild(totalLine);
+
+            Array.from(counts.entries())
+                .sort(([a], [b]) => a.localeCompare(b))
+                .forEach(([name, count]) => {
+                const line = document.createElement("button");
+                line.type = "button";
+                line.dataset.lootMonsterName = name;
+                line.textContent = `${titleCaseMonsterName(name)}: ${count}`;
+
+                line.style.cssText = `
+        display:inline-block;
+        margin:2px 4px 2px 0;
+        padding:3px 7px;
+        border-radius:999px;
+        border:1px solid #3d426b;
+        background:${selected === name ? "#4b5bdc" : "#252945"};
+        color:#e6e8ff;
+        cursor:pointer;
+        font-size:12px;
+      `;
+
+                line.addEventListener("click", () => {
+                    Storage.set(LOOT_FILTER_KEY, name);
+                    select.value = name;
+                    updateLootMonsterCountDisplay();
+                    updateLootMonsterVisualFilter();
+                });
+
+                countBox.appendChild(line);
+            });
+        }
+
+        function refreshLootMonsterFilterUI() {
+            const select = document.getElementById("lootMonsterNameFilter");
+            if (!select) return;
+
+            const counts = getLootMonsterCounts(document);
+            const names = Array.from(counts.keys()).sort();
+            const selected = getSelectedLootMonsterName();
+
+            select.innerHTML = "";
+
+            const allOpt = document.createElement("option");
+            allOpt.value = "";
+            allOpt.textContent = `All monsters (${Array.from(counts.values()).reduce(
+                (sum, n) => sum + n,
+                0
+            )})`;
+            select.appendChild(allOpt);
+
+            names.forEach((name) => {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.textContent = `${titleCaseMonsterName(name)} (${counts.get(name)})`;
+                select.appendChild(opt);
+            });
+
+            select.value = names.includes(selected) ? selected : "";
+            if (selected && !names.includes(selected)) {
+                Storage.set(LOOT_FILTER_KEY, "");
+            }
+
+            updateLootMonsterCountDisplay();
+            updateLootMonsterVisualFilter();
+        }
+
+        function injectLootMonsterFilter() {
+            if (document.getElementById("lootMonsterNameFilter")) return;
+
+            const btnLootX = document.getElementById("btnLootX");
+            const lootStatus = document.getElementById("lootStatus");
+            if (!btnLootX || !lootStatus) return;
+
+            const panel = document.createElement("div");
+            panel.id = "lootMonsterFilterPanel";
+            panel.style.cssText = `
+    margin:10px 0;
+    padding:8px 10px;
+    border:1px solid #2b2d44;
+    border-radius:8px;
+    background:#1f2238;
+    color:#e6e8ff;
+  `;
+
+            const row = document.createElement("div");
+            row.style.cssText = `
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:6px;
+  `;
+
+            const label = document.createElement("label");
+            label.htmlFor = "lootMonsterNameFilter";
+            label.textContent = "Loot filter:";
+
+            const select = document.createElement("select");
+            select.id = "lootMonsterNameFilter";
+            select.style.cssText = `
+    max-width:260px;
+    padding:5px 8px;
+    border-radius:6px;
+    background:#2d3154;
+    color:#e6e8ff;
+    border:1px solid #2b2d44;
+  `;
+
+            const clearBtn = document.createElement("button");
+            clearBtn.type = "button";
+            clearBtn.textContent = "Clear";
+            clearBtn.style.cssText = `
+    padding:5px 9px;
+    border-radius:6px;
+    border:1px solid #3d426b;
+    background:#252945;
+    color:#e6e8ff;
+    cursor:pointer;
+  `;
+
+            const summary = document.createElement("span");
+            summary.id = "lootMonsterFilterSummary";
+            summary.style.cssText = "font-size:12px;opacity:.9;";
+
+            /*             const countBox = document.createElement("div");
+            countBox.id = "lootMonsterCountBox";
+            countBox.style.cssText = `
+    margin-top:4px;
+    font-size:12px;
+    line-height:1.6;
+  `; */
+
+            select.addEventListener("change", () => {
+                Storage.set(LOOT_FILTER_KEY, select.value);
+                updateLootMonsterCountDisplay();
+                updateLootMonsterVisualFilter();
+
+                if (lootStatus) {
+                    lootStatus.textContent = select.value
+                        ? `Loot filter set to: ${titleCaseMonsterName(select.value)}`
+        : "Loot filter cleared.";
+                }
+            });
+
+            clearBtn.addEventListener("click", () => {
+                Storage.set(LOOT_FILTER_KEY, "");
+                select.value = "";
+                updateLootMonsterCountDisplay();
+                updateLootMonsterVisualFilter();
+
+                if (lootStatus) {
+                    lootStatus.textContent = "Loot filter cleared.";
+                }
+            });
+
+            row.append(label, select, clearBtn, summary);
+            panel.append(row);
+
+            btnLootX.insertAdjacentElement("afterend", panel);
+
+            refreshLootMonsterFilterUI();
+
+            /*             const observer = new MutationObserver(() => {
+                refreshLootMonsterFilterUI();
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+            }); */
+        }
+
+        function updateLootMonsterFilterVisibility() {
+            const panel = document.getElementById("lootMonsterFilterPanel");
+
+            if (!panel) return;
+
+            const enabled = Storage.get(
+                "ui-improvements:showLootMonsterFilter",
+                true
+            );
+
+            panel.style.display = enabled ? "" : "none";
+        }
+
+
+        injectLootMonsterFilter();
+        refreshLootMonsterFilterUI();
+        updateLootMonsterVisualFilter();
+        updateLootMonsterFilterVisibility();
+
+       
+        function getEligibleMobs(doc = document) {
+            const ignoreBossMobsWhenLooting = Storage.get(
+                "ui-improvements:ignoreBossMobsWhenLooting",
+                true
+            );
+
+            const selectedLootMonsterName = getSelectedLootMonsterName();
+
+            const els = Array.from(
+                doc.querySelectorAll('.monster-card[data-eligible="1"]')
+            );
+
+            return els
+                .filter((el) => {
+                const name = normalizeMonsterName(el.dataset.name);
+
+                if (!name) return false;
+
+                if (ignoreBossMobsWhenLooting && LOOTING_BLACKLIST_SET.has(name)) {
+                    return false;
+                }
+
+                if (selectedLootMonsterName && name !== selectedLootMonsterName) {
+                    return false;
+                }
+
+                return true;
+            })
+                .map((el) => parseInt(el.dataset.monsterId, 10))
+                .filter(Boolean);
+        }
+
+        
+
+        async function getLootableMobs(numMobs = 1) {
+            const unclaimedKills = [...document.querySelectorAll(".unclaimed-pill")]
+            .find((el) => el.textContent.includes("Unclaimed kills"))
+            ?.querySelector(".count")?.textContent;
+
+            const unclaimedKillsNumber =
+                  Number(parseInt(unclaimedKills.replace(/\D/g, ""), 10)) || 200;
+
+            const actualNumberToLoot = Math.min(numMobs, unclaimedKillsNumber);
+            const numPages = Math.ceil(unclaimedKillsNumber / PAGINATION_PAGE_SIZE);
+
+            const url = new URL(window.location.href);
+            const targetIds = new Set(getEligibleMobs());
+            $stat.textContent = `Gathering page 1, collected: ${targetIds.size}/${actualNumberToLoot}`;
+            if (targetIds.size < actualNumberToLoot) {
+                for (let i = 2; i <= numPages; i += 1) {
+                    url.searchParams.set("dead_page", i.toString());
+                    $stat.textContent = `Gathering page ${i}, collected: ${targetIds.size}/${actualNumberToLoot}`;
+                    try {
+                        const doc = await internalFetch(url.toString());
+                        const eligibleMobIds = getEligibleMobs(doc);
+                        for (const mobId of eligibleMobIds) {
+                            targetIds.add(mobId);
+                        }
+                        if (targetIds.size >= actualNumberToLoot) {
+                            break;
+                        }
+                    } catch (e) {
+                        console.error(
+                            `Error encountered while fetching dead mobs on page ${i}:`,
+                            e,
+                        );
+                        $stat.textContent = `Error encountered while fetching dead mobs on page ${i}.... continuing`;
+                        await sleep(3000);
+                    }
+                }
+            }
+
+            return [...targetIds].slice(0, actualNumberToLoot);
+        }
+
+        const enableLootXFaster = Storage.get(
+            "ui-improvements:enableLootXFaster",
+            true,
+        );
+        const $stat = document.getElementById("lootStatus");
+        $stat.style.flexBasis = "100%";
+        $stat.parentElement.style.flexWrap = "wrap";
+        if (enableLootXFaster) {
+            function overrideLootX() {
+                const btnLootX = document.getElementById("btnLootX");
+                if (!btnLootX) return;
+
+                const customBtn = document.createElement("button");
+                customBtn.id = "btnCustomLoot";
+                customBtn.type = "button";
+                customBtn.className = "custom-loot-btn";
+                customBtn.textContent = "💰 Loot X monsters (super fast)";
+
+                btnLootX.insertAdjacentElement("afterend", customBtn);
+                btnLootX.textContent = "💰 Loot X monsters (vanilla)";
+
+                const BATCH_SIZE = 200;
+
+                customBtn.addEventListener("click", async () => {
+                    customBtn.classList.add("is-running");
+                    customBtn.textContent = "Working...";
+                    btnLootX.classList.add("is-running");
+                    btnLootX.textContent = "Working...";
+
+                    const n = Math.max(1, parseInt($input.value || "1", 10));
+                    $stat.textContent = `Gathering ${n.toLocaleString()} mobs to loot...`;
+                    const targetIds = await getLootableMobs(n);
+
+                    if (!targetIds.length) {
+                        $stat.textContent = "No eligible dead monsters you joined.";
+                        return;
+                    }
+
+                    let ok = 0;
+                    let fail = 0;
+                    let totalExp = 0;
+                    let totalGold = 0;
+                    let totalDmg = 0;
+                    const allItems = [];
+                    const allNotes = [];
+
+                    const total = targetIds.length;
+
+                    // Split into batches of 200
+                    for (let start = 0; start < total; start += BATCH_SIZE) {
+                        const batch = targetIds.slice(start, start + BATCH_SIZE);
+
+                        $stat.textContent = `Looting ${start + 1}-${
+              start + batch.length
+                    }/${total}... (success: ${ok}, fail: ${fail})`;
+
+                        const promises = batch.map(async (targetId) => {
+                            try {
+                                const res = await lootMonster(targetId);
+
+                                if (res.ok) {
+                                    ok++;
+                                    totalExp += res.rewards.exp;
+                                    totalGold += res.rewards.gold;
+                                    totalDmg += res.rewards.damage_dealt;
+
+                                    if (res.items?.length) {
+                                        allItems.push(...res.items);
+                                    } else if (res.note) {
+                                        allNotes.push(res.note);
+                                    }
+
+                                    const el = document.querySelector(
+                                        `.monster-card[data-monster-id="${targetId}"]`,
+                                    );
+                                    if (el) el.setAttribute("data-eligible", "0");
+                                } else {
+                                    fail++;
+                                    if (res.note) allNotes.push(res.note);
+                                }
+                            } catch {
+                                fail++;
+                                allNotes.push("Server error");
+                            }
+                        });
+
+                        // Wait for this batch before starting the next
+                        await Promise.all(promises);
+                    }
+
+                    $stat.textContent = `Done. Looted ${ok}, failed ${fail}.`;
+                    customBtn.classList.remove("is-running");
+                    customBtn.textContent = "💰 Loot X monsters (super fast)";
+                    btnLootX.classList.remove("is-running");
+                    btnLootX.textContent = "💰 Loot X monsters (vanilla)";
+
+                    openBatchLootModal(
+                        {
+                            processed: `${ok + fail}/${total}`,
+                            success: ok,
+                            fail,
+                            exp: totalExp,
+                            gold: totalGold,
+                            dmg: totalDmg,
+                        },
+                        allItems,
+                        allNotes,
+                    );
+                });
+            }
+
+            overrideLootX();
+        }
+
+        GM_addStyle(`
       .blm-item{
         position: relative;
       }
@@ -1083,52 +1398,52 @@ v2.2.2:
         pointer-events: none;
       }
     `);
-    function openBatchLootModal(summary, items, notes) {
-      const sumEl = document.getElementById("blmSummary");
-      sumEl.innerHTML = `
+        function openBatchLootModal(summary, items, notes) {
+            const sumEl = document.getElementById("blmSummary");
+            sumEl.innerHTML = `
         <span class="chip">Processed: ${summary.processed}</span>
         <span class="chip">Success: ${summary.success}</span>
         <span class="chip">Fail: ${summary.fail}</span>
         <span class="chip">EXP: ${new Intl.NumberFormat().format(
-          summary.exp,
-        )}</span>
+                summary.exp,
+            )}</span>
         <span class="chip">Gold: ${new Intl.NumberFormat().format(
-          summary.gold,
-        )}</span>
+                summary.gold,
+            )}</span>
         <span class="chip">Damage: ${new Intl.NumberFormat().format(
-          summary.dmg,
-        )}</span>
+                summary.dmg,
+            )}</span>
         <span class="chip">Items: ${items.length}</span>
       `;
 
-      const noteEl = document.getElementById("blmNote");
-      const DROPLESS_PATTERNS = [
-        /^\s*no item dropped/i,
-        /^\s*you didn[’']?t reach the damage requirement/i,
-      ];
-      let filteredNotes = (notes || []).filter(Boolean);
-      if (items.length > 0) {
-        filteredNotes = filteredNotes.filter(
-          (n) => !DROPLESS_PATTERNS.some((p) => p.test(n)),
-        );
-      }
-      const noteText = Array.from(new Set(filteredNotes)).join(" ");
-      if (noteText) {
-        noteEl.style.display = "block";
-        noteEl.textContent = noteText;
-      } else {
-        noteEl.style.display = "none";
-        noteEl.textContent = "";
-      }
+            const noteEl = document.getElementById("blmNote");
+            const DROPLESS_PATTERNS = [
+                /^\s*no item dropped/i,
+                /^\s*you didn[’']?t reach the damage requirement/i,
+            ];
+            let filteredNotes = (notes || []).filter(Boolean);
+            if (items.length > 0) {
+                filteredNotes = filteredNotes.filter(
+                    (n) => !DROPLESS_PATTERNS.some((p) => p.test(n)),
+                );
+            }
+            const noteText = Array.from(new Set(filteredNotes)).join(" ");
+            if (noteText) {
+                noteEl.style.display = "block";
+                noteEl.textContent = noteText;
+            } else {
+                noteEl.style.display = "none";
+                noteEl.textContent = "";
+            }
 
-      const grid = document.getElementById("batchLootItems");
+            const grid = document.getElementById("batchLootItems");
 
-      dedupedItems = dedupeItems(items);
+            dedupedItems = dedupeItems(items);
 
-      grid.innerHTML = dedupedItems.length
-        ? dedupedItems
-            .map(
-              (it) => `
+            grid.innerHTML = dedupedItems.length
+                ? dedupedItems
+                .map(
+                (it) => `
             <div class="blm-item">
               <div class="blm-item-qty">x${it.QUANTITY_DROPPED}</div>
               <img src="${it.IMAGE_URL}" alt="${it.NAME}">
@@ -1137,199 +1452,199 @@ v2.2.2:
             </div>
           `,
             )
-            .join("")
-        : `<div class="muted" style="padding:6px 0;">No items this time.</div>`;
+                .join("")
+            : `<div class="muted" style="padding:6px 0;">No items this time.</div>`;
 
-      document.getElementById("batchLootModal").style.display = "flex";
-    }
-
-    function patchLootButton() {
-      const $btn = document.querySelector("#btnLootX"); // replace with actual selector
-      if (!$btn) return;
-
-      const ignoreBossMobsWhenLooting = Storage.get(
-        "ui-improvements:ignoreBossMobsWhenLooting",
-        true,
-      );
-
-      // Find the existing click listeners
-      const oldHandler = $btn.onclick || $btn.__lootHandler;
-      // Remove it from the button (if needed)
-      $btn.replaceWith($btn.cloneNode(true));
-      const newBtn = document.querySelector("#btnLootX");
-
-      // Add your wrapped click handler
-      newBtn.addEventListener("click", async (e) => {
-        console.log("[TM] Loot click intercepted");
-        const n = Math.max(1, parseInt($input.value || "1", 10));
-        setRunning(true);
-        $stat.textContent = `Gathering ${n.toLocaleString()} mobs to loot...`;
-
-        const targetIds = await getLootableMobs(n);
-
-        if (targetIds.length === 0) {
-          $stat.textContent = "No eligible dead monsters you joined.";
-          return;
+            document.getElementById("batchLootModal").style.display = "flex";
         }
 
-        let ok = 0,
-          fail = 0;
-        let totalExp = 0,
-          totalGold = 0,
-          totalDmg = 0;
-        const allItems = [];
-        const allNotes = [];
-        for (let i = 0; i < targetIds.length; i++) {
-          $stat.textContent = `Looting ${i + 1}/${
+        function patchLootButton() {
+            const $btn = document.querySelector("#btnLootX"); // replace with actual selector
+            if (!$btn) return;
+
+            const ignoreBossMobsWhenLooting = Storage.get(
+                "ui-improvements:ignoreBossMobsWhenLooting",
+                true,
+            );
+
+            // Find the existing click listeners
+            const oldHandler = $btn.onclick || $btn.__lootHandler;
+            // Remove it from the button (if needed)
+            $btn.replaceWith($btn.cloneNode(true));
+            const newBtn = document.querySelector("#btnLootX");
+
+            // Add your wrapped click handler
+            newBtn.addEventListener("click", async (e) => {
+                console.log("[TM] Loot click intercepted");
+                const n = Math.max(1, parseInt($input.value || "1", 10));
+                setRunning(true);
+                $stat.textContent = `Gathering ${n.toLocaleString()} mobs to loot...`;
+
+                const targetIds = await getLootableMobs(n);
+
+                if (targetIds.length === 0) {
+                    $stat.textContent = "No eligible dead monsters you joined.";
+                    return;
+                }
+
+                let ok = 0,
+                    fail = 0;
+                let totalExp = 0,
+                    totalGold = 0,
+                    totalDmg = 0;
+                const allItems = [];
+                const allNotes = [];
+                for (let i = 0; i < targetIds.length; i++) {
+                    $stat.textContent = `Looting ${i + 1}/${
             targetIds.length
-          }... (success: ${ok}, fail: ${fail})`;
-          try {
-            const res = await lootMonster(targetIds[i]);
-            if (res.ok) {
-              ok++;
-              totalExp += res.rewards.exp;
-              totalGold += res.rewards.gold;
-              totalDmg += res.rewards.damage_dealt;
-              if (res.items?.length) {
-                allItems.push(...res.items);
-              } else if (res.note) {
-                allNotes.push(res.note);
-              }
-              const el = document.querySelector(
-                `.monster-card[data-monster-id="${targetIds[i]}"]`,
-              );
-              if (el) el.setAttribute("data-eligible", "0");
-            } else {
-              fail++;
-              if (res.note) allNotes.push(res.note);
-            }
-          } catch (_e) {
-            fail++;
-            allNotes.push("Server error");
-          }
-          // await new Promise((r) => setTimeout(r, 150));
+                }... (success: ${ok}, fail: ${fail})`;
+                    try {
+                        const res = await lootMonster(targetIds[i]);
+                        if (res.ok) {
+                            ok++;
+                            totalExp += res.rewards.exp;
+                            totalGold += res.rewards.gold;
+                            totalDmg += res.rewards.damage_dealt;
+                            if (res.items?.length) {
+                                allItems.push(...res.items);
+                            } else if (res.note) {
+                                allNotes.push(res.note);
+                            }
+                            const el = document.querySelector(
+                                `.monster-card[data-monster-id="${targetIds[i]}"]`,
+                            );
+                            if (el) el.setAttribute("data-eligible", "0");
+                        } else {
+                            fail++;
+                            if (res.note) allNotes.push(res.note);
+                        }
+                    } catch (_e) {
+                        fail++;
+                        allNotes.push("Server error");
+                    }
+                    // await new Promise((r) => setTimeout(r, 150));
+                }
+                $stat.textContent = `Done. Looted ${ok}, failed ${fail}.`;
+                setRunning(false);
+                openBatchLootModal(
+                    {
+                        processed: `${ok + fail}/${targetIds.length}`,
+                        success: ok,
+                        fail,
+                        exp: totalExp,
+                        gold: totalGold,
+                        dmg: totalDmg,
+                    },
+                    allItems,
+                    allNotes,
+                );
+            });
         }
-        $stat.textContent = `Done. Looted ${ok}, failed ${fail}.`;
-        setRunning(false);
-        openBatchLootModal(
-          {
-            processed: `${ok + fail}/${targetIds.length}`,
-            success: ok,
-            fail,
-            exp: totalExp,
-            gold: totalGold,
-            dmg: totalDmg,
-          },
-          allItems,
-          allNotes,
+        patchLootButton();
+
+        // -------------- Loot X Faster ---------------- //
+
+        // --------- In Battle Count Injection ------------//
+        const enableInBattleCount = Storage.get(
+            "ui-improvements:enableInBattleCount",
+            true,
         );
-      });
-    }
-    patchLootButton();
+        if (enableInBattleCount) {
+            const calculateInBattle = () => {
+                const monsterCards = document.querySelectorAll(".monster-card");
 
-    // -------------- Loot X Faster ---------------- //
+                let joinedCount = 0;
 
-    // --------- In Battle Count Injection ------------//
-    const enableInBattleCount = Storage.get(
-      "ui-improvements:enableInBattleCount",
-      true,
-    );
-    if (enableInBattleCount) {
-      const calculateInBattle = () => {
-        const monsterCards = document.querySelectorAll(".monster-card");
+                monsterCards.forEach((card) => {
+                    if (card.dataset.joined === "1") {
+                        joinedCount++;
+                    }
+                });
+                return HIDE_DEAD_MONSTERS ? joinedCount : "??";
+            };
 
-        let joinedCount = 0;
+            inBattleCount = calculateInBattle();
 
-        monsterCards.forEach((card) => {
-          if (card.dataset.joined === "1") {
-            joinedCount++;
-          }
-        });
-        return HIDE_DEAD_MONSTERS ? joinedCount : "??";
-      };
+            const blLeft = document.querySelector(".bl-left");
+            if (blLeft) {
+                const inBattleDiv = document.createElement("div");
+                const count = document.createElement("span");
+                count.className = "count";
+                count.id = "in-battle-count";
+                count.textContent = inBattleCount.toString();
+                inBattleDiv.className = "unclaimed-pill";
+                inBattleDiv.textContent = `💪 In Battle:`;
+                inBattleDiv.appendChild(count);
+                blLeft.appendChild(inBattleDiv);
+            }
+        }
+        // --------- In Battle Count Injection End ---------//
 
-      inBattleCount = calculateInBattle();
-
-      const blLeft = document.querySelector(".bl-left");
-      if (blLeft) {
-        const inBattleDiv = document.createElement("div");
-        const count = document.createElement("span");
-        count.className = "count";
-        count.id = "in-battle-count";
-        count.textContent = inBattleCount.toString();
-        inBattleDiv.className = "unclaimed-pill";
-        inBattleDiv.textContent = `💪 In Battle:`;
-        inBattleDiv.appendChild(count);
-        blLeft.appendChild(inBattleDiv);
-      }
-    }
-    // --------- In Battle Count Injection End ---------//
-
-    // ----------------- Add Heal Button ---------------//
-    (function () {
-      GM_addStyle(`
+        // ----------------- Add Heal Button ---------------//
+        (function () {
+            GM_addStyle(`
       .res-label {
         min-width: 150px;
       }
       `);
-      // Find the HP row
-      const hpRow = [...document.querySelectorAll(".res-row")].find((row) =>
-        row.querySelector(".res-label")?.textContent.includes("Hp"),
-      );
+            // Find the HP row
+            const hpRow = [...document.querySelectorAll(".res-row")].find((row) =>
+                                                                          row.querySelector(".res-label")?.textContent.includes("Hp"),
+                                                                         );
 
-      if (!hpRow) return;
+            if (!hpRow) return;
 
-      const label = hpRow.querySelector(".res-label");
-      const hpFill = hpRow.querySelector(".res-fill.stamina");
+            const label = hpRow.querySelector(".res-label");
+            const hpFill = hpRow.querySelector(".res-fill.stamina");
 
-      if (!label || !hpFill) return;
+            if (!label || !hpFill) return;
 
-      // Prevent duplicates
-      if (label.querySelector(".heal-btn")) return;
+            // Prevent duplicates
+            if (label.querySelector(".heal-btn")) return;
 
-      // Create button
-      const healBtn = document.createElement("button");
-      healBtn.className = "heal-btn btn";
-      healBtn.textContent = "💚 Heal";
-      healBtn.title = "Heal to full";
+            // Create button
+            const healBtn = document.createElement("button");
+            healBtn.className = "heal-btn btn";
+            healBtn.textContent = "💚 Heal";
+            healBtn.title = "Heal to full";
 
-      // Style via JS
-      Object.assign(healBtn.style, {
-        marginLeft: "6px",
-        cursor: "pointer",
-        fontSize: "14px",
-        lineHeight: "1",
-      });
+            // Style via JS
+            Object.assign(healBtn.style, {
+                marginLeft: "6px",
+                cursor: "pointer",
+                fontSize: "14px",
+                lineHeight: "1",
+            });
 
-      // Ensure layout
-      label.style.display = "flex";
-      label.style.alignItems = "center";
+            // Ensure layout
+            label.style.display = "flex";
+            label.style.alignItems = "center";
 
-      label.appendChild(healBtn);
+            label.appendChild(healBtn);
 
-      // Click behavior
-      const meta = hpRow.querySelector(".res-meta");
-      healBtn.addEventListener("click", async () => {
-        const usedPotion = await useHealthPotion();
-        if (usedPotion) {
-          hpFill.style.width = "100%";
-          if (meta) {
-            const max = meta.textContent.split("/")[1].trim();
-            meta.textContent = `${max} / ${max}`;
-          }
-        }
-      });
-    })();
-    // ----------------- Add Heal Button ---------------//
+            // Click behavior
+            const meta = hpRow.querySelector(".res-meta");
+            healBtn.addEventListener("click", async () => {
+                const usedPotion = await useHealthPotion();
+                if (usedPotion) {
+                    hpFill.style.width = "100%";
+                    if (meta) {
+                        const max = meta.textContent.split("/")[1].trim();
+                        meta.textContent = `${max} / ${max}`;
+                    }
+                }
+            });
+        })();
+        // ----------------- Add Heal Button ---------------//
 
-    // ------------- Custom Attack Strategy ------------//
+        // ------------- Custom Attack Strategy ------------//
 
-    const JOIN_URL = ENDPOINTS && ENDPOINTS.JOIN ? ENDPOINTS.JOIN : "";
-    const ATTACK_URL = ENDPOINTS && ENDPOINTS.ATTACK ? ENDPOINTS.ATTACK : "";
+        const JOIN_URL = ENDPOINTS && ENDPOINTS.JOIN ? ENDPOINTS.JOIN : "";
+        const ATTACK_URL = ENDPOINTS && ENDPOINTS.ATTACK ? ENDPOINTS.ATTACK : "";
 
-    let attackStrategy = Storage.get("ui-improvements:attackStrategy", []);
+        let attackStrategy = Storage.get("ui-improvements:attackStrategy", []);
 
-    GM_addStyle(`
+        GM_addStyle(`
       .attack-strat-overlay {
         position: fixed;
         inset: 0;
@@ -1535,434 +1850,434 @@ v2.2.2:
 
       `);
 
-    const Skills = Object.freeze({
-      slash: { id: "-0", cost: 1 },
-      "power slash": { id: "-1", cost: 10 },
-      "heroic slash": { id: "-2", cost: 50 },
-      "ultimate slash": { id: "-3", cost: 100 },
-      "legendary slash": { id: "-4", cost: 200 },
-    });
+        const Skills = Object.freeze({
+            slash: { id: "-0", cost: 1 },
+            "power slash": { id: "-1", cost: 10 },
+            "heroic slash": { id: "-2", cost: 50 },
+            "ultimate slash": { id: "-3", cost: 100 },
+            "legendary slash": { id: "-4", cost: 200 },
+        });
 
-    function escapeHtml(s) {
-      return String(s || "").replace(
-        /[&<>"']/g,
-        (m) =>
-          ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#39;",
-          })[m],
-      );
-    }
+        function escapeHtml(s) {
+            return String(s || "").replace(
+                /[&<>"']/g,
+                (m) =>
+                ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;",
+                })[m],
+            );
+        }
 
-    function getAttackStrategyCost(strategy = []) {
-      if (!Array.isArray(strategy)) return 0;
+        function getAttackStrategyCost(strategy = []) {
+            if (!Array.isArray(strategy)) return 0;
 
-      // Get asterion settings from storage
-      const useAsterion = Storage.get("ui-improvements:useAsterion") || false;
-      const asterionValue =
-        parseFloat(Storage.get("ui-improvements:asterionValue")) || 1;
+            // Get asterion settings from storage
+            const useAsterion = Storage.get("ui-improvements:useAsterion") || false;
+            const asterionValue =
+                  parseFloat(Storage.get("ui-improvements:asterionValue")) || 1;
 
-      return strategy.reduce((total, skillName) => {
-        const skill = Skills[skillName];
-        let cost = skill?.cost || 0;
-        if (useAsterion) cost = Math.ceil(cost * asterionValue);
-        return total + cost;
-      }, 0);
-    }
+            return strategy.reduce((total, skillName) => {
+                const skill = Skills[skillName];
+                let cost = skill?.cost || 0;
+                if (useAsterion) cost = Math.ceil(cost * asterionValue);
+                return total + cost;
+            }, 0);
+        }
 
-    function normalizeOk(r) {
-      const raw = String(r?.raw || "");
-      const d = r?.data || {};
+        function normalizeOk(r) {
+            const raw = String(r?.raw || "");
+            const d = r?.data || {};
 
-      const ok =
-        d.status === "success" ||
-        d.ok === true ||
-        d.success === true ||
-        /^\s*success\s*$/i.test(raw) ||
-        /joined|already joined/i.test(raw);
+            const ok =
+                  d.status === "success" ||
+                  d.ok === true ||
+                  d.success === true ||
+                  /^\s*success\s*$/i.test(raw) ||
+                  /joined|already joined/i.test(raw);
 
-      const msg =
-        typeof d.message === "string" && d.message.trim()
-          ? d.message
-          : typeof d.error === "string" && d.error.trim()
+            const msg =
+                  typeof d.message === "string" && d.message.trim()
+            ? d.message
+            : typeof d.error === "string" && d.error.trim()
             ? d.error
             : raw || (ok ? "OK" : "Failed");
 
-      return { ok, msg, data: d, raw };
-    }
-
-    function isAttackRateLimited(res) {
-      if (res?.status === 429 || res?.status === 503) return true;
-
-      const d = res?.data;
-      if (d && typeof d === "object" && d.status === "error") {
-        const m = String(d.message || "").toLowerCase();
-        if (
-          /slow down|too quickly|too fast|attacking too quickly|rate[\s_-]?limit|throttl/i.test(
-            m,
-          )
-        ) {
-          return true;
+            return { ok, msg, data: d, raw };
         }
-      }
 
-      const blob =
-        `${res?.msg || ""} ${res?.raw || ""} ${typeof res?.data === "object" && res.data ? JSON.stringify(res.data) : ""}`.toLowerCase();
-      return /rate[\s_-]?limit|too fast|too many requests|throttl|slow down|too quickly|attacking too quickly|wait (?:\d+|a few)|try again in|cooling down|not ready|please wait/i.test(
-        blob,
-      );
-    }
+        function isAttackRateLimited(res) {
+            if (res?.status === 429 || res?.status === 503) return true;
 
-    function backoffMsForAttackRateLimit(res, attemptIndex) {
-      if (res?.retryAfterMs != null && res.retryAfterMs > 0) {
-        return Math.min(res.retryAfterMs, 120_000);
-      }
-      const base = 800;
-      const cap = 20_000;
-      return Math.min(cap, base * 2 ** attemptIndex);
-    }
+            const d = res?.data;
+            if (d && typeof d === "object" && d.status === "error") {
+                const m = String(d.message || "").toLowerCase();
+                if (
+                    /slow down|too quickly|too fast|attacking too quickly|rate[\s_-]?limit|throttl/i.test(
+                        m,
+                    )
+                ) {
+                    return true;
+                }
+            }
 
-    function openBatchAttackModal(results) {
-      const ok = results.filter((r) => r.ok).length;
-      const fail = results.length - ok;
+            const blob =
+                  `${res?.msg || ""} ${res?.raw || ""} ${typeof res?.data === "object" && res.data ? JSON.stringify(res.data) : ""}`.toLowerCase();
+            return /rate[\s_-]?limit|too fast|too many requests|throttl|slow down|too quickly|attacking too quickly|wait (?:\d+|a few)|try again in|cooling down|not ready|please wait/i.test(
+                blob,
+            );
+        }
 
-      const sum = document.getElementById("bamSummary");
-      const list = document.getElementById("bamList");
+        function backoffMsForAttackRateLimit(res, attemptIndex) {
+            if (res?.retryAfterMs != null && res.retryAfterMs > 0) {
+                return Math.min(res.retryAfterMs, 120_000);
+            }
+            const base = 800;
+            const cap = 20_000;
+            return Math.min(cap, base * 2 ** attemptIndex);
+        }
 
-      if (sum) {
-        sum.textContent = `Processed: ${results.length} | Success: ${ok} | Failed: ${fail}`;
-      }
+        function openBatchAttackModal(results) {
+            const ok = results.filter((r) => r.ok).length;
+            const fail = results.length - ok;
 
-      if (list) {
-        list.innerHTML = ""; // clear previous entries
+            const sum = document.getElementById("bamSummary");
+            const list = document.getElementById("bamList");
 
-        results.forEach((r) => {
-          const color = r.ok ? "#7CFFB8" : "#ff6b6b";
-          const border = r.ok ? "rgba(0,255,140,.25)" : "rgba(255,0,80,.25)";
+            if (sum) {
+                sum.textContent = `Processed: ${results.length} | Success: ${ok} | Failed: ${fail}`;
+            }
 
-          // Outer card
-          const card = document.createElement("div");
-          card.style.cssText = `
+            if (list) {
+                list.innerHTML = ""; // clear previous entries
+
+                results.forEach((r) => {
+                    const color = r.ok ? "#7CFFB8" : "#ff6b6b";
+                    const border = r.ok ? "rgba(0,255,140,.25)" : "rgba(255,0,80,.25)";
+
+                    // Outer card
+                    const card = document.createElement("div");
+                    card.style.cssText = `
         background:#1e1e2f;
         border:1px solid ${border};
         border-radius:10px;
         padding:10px 12px;
       `;
 
-          // Header row
-          const header = document.createElement("div");
-          header.style.cssText = `
+                    // Header row
+                    const header = document.createElement("div");
+                    header.style.cssText = `
         display:flex;
         justify-content:space-between;
         gap:10px;
         align-items:center;
       `;
 
-          const monster = document.createElement("div");
-          monster.style.fontWeight = "700";
-          monster.style.color = "#e6e9ff";
+                    const monster = document.createElement("div");
+                    monster.style.fontWeight = "700";
+                    monster.style.color = "#e6e9ff";
 
-          const link = document.createElement("a");
-          link.href = `https://demonicscans.org/battle.php?id=${r.monsterId}`;
-          link.textContent = `Go to Battle #${r.monsterId}`;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
+                    const link = document.createElement("a");
+                    link.href = `https://demonicscans.org/battle.php?id=${r.monsterId}`;
+                    link.textContent = `Go to Battle #${r.monsterId}`;
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
 
-          Object.assign(link.style, {
-            display: "inline-block",
-            padding: "4px 8px",
-            background: "rgb(26, 157, 115)",
-            color: "white",
-            textDecoration: "none",
-            borderRadius: "6px",
-            fontWeight: "bold",
-            cursor: "pointer",
-          });
+                    Object.assign(link.style, {
+                        display: "inline-block",
+                        padding: "4px 8px",
+                        background: "rgb(26, 157, 115)",
+                        color: "white",
+                        textDecoration: "none",
+                        borderRadius: "6px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                    });
 
-          const status = document.createElement("div");
-          status.style.fontWeight = "800";
-          status.style.color = color;
-          status.textContent = r.ok ? "✅ OK" : "❌ FAIL";
+                    const status = document.createElement("div");
+                    status.style.fontWeight = "800";
+                    status.style.color = color;
+                    status.textContent = r.ok ? "✅ OK" : "❌ FAIL";
 
-          monster.appendChild(link);
-          header.append(monster, status);
+                    monster.appendChild(link);
+                    header.append(monster, status);
 
-          // Message container
-          const msgWrap = document.createElement("div");
-          msgWrap.style.cssText = `
+                    // Message container
+                    const msgWrap = document.createElement("div");
+                    msgWrap.style.cssText = `
         margin-top:6px;
         color:#9aa0be;
         font-size:12px;
         line-height:1.45;
       `;
-          console.log("r", r);
-          msgWrap.appendChild(r.msgEl);
+                    console.log("r", r);
+                    msgWrap.appendChild(r.msgEl);
 
-          card.append(header, msgWrap);
-          list.appendChild(card);
-        });
-      }
+                    card.append(header, msgWrap);
+                    list.appendChild(card);
+                });
+            }
 
-      document.getElementById("batchAttackModal").style.display = "flex";
-    }
-
-    function showStatus(t) {
-      const statusEl = document.getElementById("batchAttackStatus");
-      if (!statusEl) return;
-      statusEl.innerHTML = t || "";
-    }
-
-    function setQuickBtnsRunning(running) {
-      const quickBtns = Array.from(
-        document.querySelectorAll(".btnQuickJoinAttack"),
-      );
-      quickBtns.forEach((b) => {
-        b.disabled = running;
-        b.style.opacity = running ? "0.7" : "";
-      });
-    }
-
-    function buildResult(skill, ok, msg, damage = 0) {
-      const msgEl = document.createElement("div");
-      msgEl.innerHTML = msg;
-      msgEl.className = ok ? "attack-success" : "attack-fail";
-
-      return {
-        skill,
-        ok,
-        msg,
-        msgEl,
-        damage,
-      };
-    }
-
-    async function performAttackStrat(
-      monsterId,
-      attackStrat,
-      startJoinTime = performance.now(),
-    ) {
-      const useDamageLimit = Storage.get(
-        "ui-improvements:useDamageLimit",
-        false,
-      );
-      const damageLimitValue = parseFloat(
-        Storage.get("ui-improvements:damageLimitValue") || 0,
-      );
-
-      const results = [];
-      let totalDamage = 0;
-
-      stratLoop: for (const skillName of attackStrat) {
-        const skill = Skills[skillName.toLowerCase()];
-
-        if (!skill) {
-          results.push(
-            buildResult(skillName, false, `Unknown skill: ${skillName}`),
-          );
-          continue;
+            document.getElementById("batchAttackModal").style.display = "flex";
         }
 
-        if (
-          useDamageLimit &&
-          damageLimitValue > 0 &&
-          totalDamage >= damageLimitValue
+        function showStatus(t) {
+            const statusEl = document.getElementById("batchAttackStatus");
+            if (!statusEl) return;
+            statusEl.innerHTML = t || "";
+        }
+
+        function setQuickBtnsRunning(running) {
+            const quickBtns = Array.from(
+                document.querySelectorAll(".btnQuickJoinAttack"),
+            );
+            quickBtns.forEach((b) => {
+                b.disabled = running;
+                b.style.opacity = running ? "0.7" : "";
+            });
+        }
+
+        function buildResult(skill, ok, msg, damage = 0) {
+            const msgEl = document.createElement("div");
+            msgEl.innerHTML = msg;
+            msgEl.className = ok ? "attack-success" : "attack-fail";
+
+            return {
+                skill,
+                ok,
+                msg,
+                msgEl,
+                damage,
+            };
+        }
+
+        async function performAttackStrat(
+        monsterId,
+         attackStrat,
+         startJoinTime = performance.now(),
         ) {
-          console.info(`Target damage reached, skipping ${skillName}`);
-          break;
-        }
-
-        const maxRateLimitRetries = 8;
-        try {
-          for (
-            let rateAttempt = 0;
-            rateAttempt < maxRateLimitRetries;
-            rateAttempt++
-          ) {
-            const startAttackTime =
-              results.length === 0 ? startJoinTime : performance.now();
-            const res = await doAttack(
-              monsterId,
-              parseInt(skill.id, 10),
-              skill.cost,
+            const useDamageLimit = Storage.get(
+                "ui-improvements:useDamageLimit",
+                false,
+            );
+            const damageLimitValue = parseFloat(
+                Storage.get("ui-improvements:damageLimitValue") || 0,
             );
 
-            if (
-              !res.ok &&
-              isAttackRateLimited(res) &&
-              rateAttempt < maxRateLimitRetries - 1
-            ) {
-              const waitMs = backoffMsForAttackRateLimit(res, rateAttempt);
-              console.info(
-                `Attack rate limited (${skillName}), retry ${rateAttempt + 1}/${maxRateLimitRetries} after ${waitMs}ms`,
-              );
-              await sleep(waitMs);
-              continue;
-            }
+            const results = [];
+            let totalDamage = 0;
 
-            const msg =
-              res.msg ||
-              (res.ok
-                ? `Attacked with ${skillName}`
+            stratLoop: for (const skillName of attackStrat) {
+                const skill = Skills[skillName.toLowerCase()];
+
+                if (!skill) {
+                    results.push(
+                        buildResult(skillName, false, `Unknown skill: ${skillName}`),
+                    );
+                    continue;
+                }
+
+                if (
+                    useDamageLimit &&
+                    damageLimitValue > 0 &&
+                    totalDamage >= damageLimitValue
+                ) {
+                    console.info(`Target damage reached, skipping ${skillName}`);
+                    break;
+                }
+
+                const maxRateLimitRetries = 8;
+                try {
+                    for (
+                        let rateAttempt = 0;
+                        rateAttempt < maxRateLimitRetries;
+                        rateAttempt++
+                    ) {
+                        const startAttackTime =
+                              results.length === 0 ? startJoinTime : performance.now();
+                        const res = await doAttack(
+                            monsterId,
+                            parseInt(skill.id, 10),
+                            skill.cost,
+                        );
+
+                        if (
+                            !res.ok &&
+                            isAttackRateLimited(res) &&
+                            rateAttempt < maxRateLimitRetries - 1
+                        ) {
+                            const waitMs = backoffMsForAttackRateLimit(res, rateAttempt);
+                            console.info(
+                                `Attack rate limited (${skillName}), retry ${rateAttempt + 1}/${maxRateLimitRetries} after ${waitMs}ms`,
+                            );
+                            await sleep(waitMs);
+                            continue;
+                        }
+
+                        const msg =
+                              res.msg ||
+                              (res.ok
+                               ? `Attacked with ${skillName}`
                 : `Attack failed with ${skillName}`);
 
-            const match = msg.match(/<strong>([\d,]+)<\/strong>/);
-            const damage = match ? Number(match[1].replace(/,/g, "")) : 0;
+                        const match = msg.match(/<strong>([\d,]+)<\/strong>/);
+                        const damage = match ? Number(match[1].replace(/,/g, "")) : 0;
 
-            totalDamage += damage;
+                        totalDamage += damage;
 
-            results.push(buildResult(skillName, !!res.ok, msg, damage));
+                        results.push(buildResult(skillName, !!res.ok, msg, damage));
 
-            if (ATTACK_COOLDOWN) {
-              const endAttackTime = performance.now();
-              const cd = ATTACK_COOLDOWN - (endAttackTime - startAttackTime);
-              if (cd > 0) {
-                console.log(`waiting for cooldown ${cd}ms on ${monsterId}`);
-                await sleep(cd);
-              }
+                        if (ATTACK_COOLDOWN) {
+                            const endAttackTime = performance.now();
+                            const cd = ATTACK_COOLDOWN - (endAttackTime - startAttackTime);
+                            if (cd > 0) {
+                                console.log(`waiting for cooldown ${cd}ms on ${monsterId}`);
+                                await sleep(cd);
+                            }
+                        }
+
+                        if (!res.ok) break stratLoop; // stop strategy on failure
+                        break; // success: next skill
+                    }
+                } catch (error) {
+                    console.log("failed because of", error);
+                    results.push(
+                        buildResult(
+                            skillName,
+                            false,
+                            `Attack request failed (${skillName})`,
+                        ),
+                    );
+                    break;
+                }
             }
 
-            if (!res.ok) break stratLoop; // stop strategy on failure
-            break; // success: next skill
-          }
-        } catch (error) {
-          console.log("failed because of", error);
-          results.push(
-            buildResult(
-              skillName,
-              false,
-              `Attack request failed (${skillName})`,
-            ),
-          );
-          break;
+            return results;
         }
-      }
 
-      return results;
-    }
-
-    function getSelectedMonsterIds() {
-      return Array.from(document.querySelectorAll(".pickMonster:checked"))
-        .map((cb) => parseInt(cb.dataset.mid || "0", 10))
-        .filter(Boolean);
-    }
-
-    async function doJoin(monsterId) {
-      if (!JOIN_URL) return { ok: false, msg: "Join endpoint not set" };
-      const userId = await getUserId();
-      if (!userId) return { ok: false, msg: "Missing userId" };
-
-      // ✅ user_join_battle.php expects POST monster_id + user_id
-      const r = await postForm(JOIN_URL, {
-        monster_id: monsterId,
-        user_id: userId,
-      });
-
-      const n = normalizeOk(r);
-      return { ok: n.ok, msg: n.msg, data: n.data, raw: n.raw };
-    }
-
-    async function doAttack(monsterId, skillId, stam) {
-      if (!ATTACK_URL) {
-        return {
-          ok: false,
-          msg: "Attack endpoint not set",
-          status: 0,
-          retryAfterMs: null,
-        };
-      }
-
-      // ✅ damage.php expects POST monster_id + skill_id
-      const payload = {
-        monster_id: monsterId,
-        skill_id: skillId,
-        stamina_cost: stam,
-      };
-
-      const r = await postForm(ATTACK_URL, payload);
-      const n = normalizeOk(r);
-      const msg =
-        n.msg || (n.ok ? `Attacked (${stam})` : `Attack failed (${stam})`);
-      // if (cooldown > 0) {
-      //   await sleep(cooldown);
-      // }
-      return {
-        ok: n.ok,
-        msg: n.msg,
-        data: n.data,
-        raw: n.raw,
-        status: r.status,
-        retryAfterMs: r.retryAfterMs,
-      };
-    }
-
-    async function postForm(url, payload) {
-      const fd = new FormData();
-      Object.entries(payload || {}).forEach(([k, v]) => fd.append(k, v));
-
-      const res = await fetch(url, {
-        method: "POST",
-        body: fd,
-        credentials: "same-origin",
-      });
-      const txt = await res.text();
-
-      let retryAfterMs = null;
-      const ra = res.headers.get("Retry-After");
-      if (ra) {
-        const sec = parseInt(String(ra).trim(), 10);
-        if (Number.isFinite(sec) && sec > 0) {
-          retryAfterMs = Math.min(sec * 1000, 120_000);
+        function getSelectedMonsterIds() {
+            return Array.from(document.querySelectorAll(".pickMonster:checked"))
+                .map((cb) => parseInt(cb.dataset.mid || "0", 10))
+                .filter(Boolean);
         }
-      }
 
-      try {
-        return {
-          ok: res.ok,
-          status: res.status,
-          retryAfterMs,
-          data: JSON.parse(txt),
-          raw: txt,
-        };
-      } catch (_e) {
-        return {
-          ok: res.ok,
-          status: res.status,
-          retryAfterMs,
-          data: null,
-          raw: txt,
-        };
-      }
-    }
+        async function doJoin(monsterId) {
+            if (!JOIN_URL) return { ok: false, msg: "Join endpoint not set" };
+            const userId = await getUserId();
+            if (!userId) return { ok: false, msg: "Missing userId" };
 
-    function formatShortNumber(num) {
-      const abs = Math.abs(num);
+            // ✅ user_join_battle.php expects POST monster_id + user_id
+            const r = await postForm(JOIN_URL, {
+                monster_id: monsterId,
+                user_id: userId,
+            });
 
-      if (abs >= 1e9) {
-        return (num / 1e9).toFixed(1).replace(/\.0$/, "") + "b";
-      }
-      if (abs >= 1e6) {
-        return (num / 1e6).toFixed(1).replace(/\.0$/, "") + "m";
-      }
-      if (abs >= 1e3) {
-        return Math.floor(num / 1e3) + "k";
-      }
-      return String(num);
-    }
+            const n = normalizeOk(r);
+            return { ok: n.ok, msg: n.msg, data: n.data, raw: n.raw };
+        }
 
-    function openAttackSettingsModal() {
-      if (document.getElementById("attackStratModal")) return;
+        async function doAttack(monsterId, skillId, stam) {
+            if (!ATTACK_URL) {
+                return {
+                    ok: false,
+                    msg: "Attack endpoint not set",
+                    status: 0,
+                    retryAfterMs: null,
+                };
+            }
 
-      const overlay = document.createElement("div");
-      overlay.id = "attackStratModal";
-      overlay.className = "attack-strat-overlay";
+            // ✅ damage.php expects POST monster_id + skill_id
+            const payload = {
+                monster_id: monsterId,
+                skill_id: skillId,
+                stamina_cost: stam,
+            };
 
-      const modal = document.createElement("div");
-      modal.className = "attack-strat-modal";
+            const r = await postForm(ATTACK_URL, payload);
+            const n = normalizeOk(r);
+            const msg =
+                  n.msg || (n.ok ? `Attacked (${stam})` : `Attack failed (${stam})`);
+            // if (cooldown > 0) {
+            //   await sleep(cooldown);
+            // }
+            return {
+                ok: n.ok,
+                msg: n.msg,
+                data: n.data,
+                raw: n.raw,
+                status: r.status,
+                retryAfterMs: r.retryAfterMs,
+            };
+        }
 
-      modal.innerHTML = `
+        async function postForm(url, payload) {
+            const fd = new FormData();
+            Object.entries(payload || {}).forEach(([k, v]) => fd.append(k, v));
+
+            const res = await fetch(url, {
+                method: "POST",
+                body: fd,
+                credentials: "same-origin",
+            });
+            const txt = await res.text();
+
+            let retryAfterMs = null;
+            const ra = res.headers.get("Retry-After");
+            if (ra) {
+                const sec = parseInt(String(ra).trim(), 10);
+                if (Number.isFinite(sec) && sec > 0) {
+                    retryAfterMs = Math.min(sec * 1000, 120_000);
+                }
+            }
+
+            try {
+                return {
+                    ok: res.ok,
+                    status: res.status,
+                    retryAfterMs,
+                    data: JSON.parse(txt),
+                    raw: txt,
+                };
+            } catch (_e) {
+                return {
+                    ok: res.ok,
+                    status: res.status,
+                    retryAfterMs,
+                    data: null,
+                    raw: txt,
+                };
+            }
+        }
+
+        function formatShortNumber(num) {
+            const abs = Math.abs(num);
+
+            if (abs >= 1e9) {
+                return (num / 1e9).toFixed(1).replace(/\.0$/, "") + "b";
+            }
+            if (abs >= 1e6) {
+                return (num / 1e6).toFixed(1).replace(/\.0$/, "") + "m";
+            }
+            if (abs >= 1e3) {
+                return Math.floor(num / 1e3) + "k";
+            }
+            return String(num);
+        }
+
+        function openAttackSettingsModal() {
+            if (document.getElementById("attackStratModal")) return;
+
+            const overlay = document.createElement("div");
+            overlay.id = "attackStratModal";
+            overlay.className = "attack-strat-overlay";
+
+            const modal = document.createElement("div");
+            modal.className = "attack-strat-modal";
+
+            modal.innerHTML = `
           <h3 class="attack-strat-title">🧠 Attack Strategy Builder</h3>
 
           <div id="skillPicker" class="attack-strat-picker"></div>
@@ -1978,667 +2293,667 @@ v2.2.2:
           </div>
         `;
 
-      overlay.appendChild(modal);
-      document.body.appendChild(overlay);
-
-      overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) overlay.remove();
-      });
-
-      modal
-        .querySelector("#attackStratClose")
-        .addEventListener("click", () => overlay.remove());
-
-      const picker = modal.querySelector("#skillPicker");
-      const chipsWrap = modal.querySelector("#strategyChips");
-      const meta = modal.querySelector("#strategyMeta");
-
-      // Load settings localStorage
-      let useAsterion = Storage.get("ui-improvements:useAsterion", false);
-      let asterionValue = parseFloat(
-        Storage.get("ui-improvements:asterionValue") || 1,
-      );
-      let useDamageLimit = Storage.get("ui-improvements:useDamageLimit", false);
-      let damageLimitValue = parseFloat(
-        Storage.get("ui-improvements:damageLimitValue") || 0,
-      );
-      // let useParallelJoins = Storage.get(
-      //   "ui-improvements:useParallelJoins",
-      //   true
-      // );
-
-      // ---------- Helpers ----------
-      function save() {
-        Storage.set("ui-improvements:attackStrategy", attackStrategy);
-        Storage.set("ui-improvements:useAsterion", useAsterion);
-        Storage.set("ui-improvements:asterionValue", asterionValue);
-        Storage.set("ui-improvements:useDamageLimit", useDamageLimit);
-        Storage.set("ui-improvements:damageLimitValue", damageLimitValue);
-
-        // Storage.set("ui-improvements:useParallelJoins", useParallelJoins);
-        // useParallelJoinsInput.checked = useParallelJoins;
-
-        // update the strategic attack button on the main page
-        let newButtonString = `🧠 Quick Join & Attack (${getAttackStrategyCost(
-          attackStrategy,
-        )}) `;
-        if (useDamageLimit) {
-          newButtonString += `(limit ${formatShortNumber(damageLimitValue)})`;
-        }
-        strategyAttackBtn.textContent = newButtonString;
-        updateAttackButtons();
-        renderMeta();
-      }
-
-      function renderMeta() {
-        let total = getAttackStrategyCost(attackStrategy);
-
-        meta.innerHTML = `Total stamina cost: <span class="total-stam-cost">${total}</span>`;
-
-        // ----------  Use Asterion ----------
-        let asterionContainer = document.getElementById("asterionContainer");
-        if (!asterionContainer) {
-          asterionContainer = document.createElement("div");
-          asterionContainer.id = "asterionContainer";
-          asterionContainer.className = "attack-strat-asterion";
-
-          // Checkbox container
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.id = "useAsterionCheckbox";
-          checkbox.checked = useAsterion;
-          checkbox.className = "attack-strat-checkbox";
-
-          const label = document.createElement("label");
-          label.htmlFor = "useAsterionCheckbox";
-          label.className = "attack-strat-label";
-          label.textContent = "Calculate Using Asterion";
-
-          // Number input
-          const input = document.createElement("input");
-          input.type = "number";
-          input.min = "1";
-          input.step = 0.5;
-          input.value = asterionValue.toString();
-          input.id = "asterionInput";
-          input.className = "attack-strat-asterion-input";
-          input.style.display = useAsterion ? "inline-block" : "none";
-
-          checkbox.addEventListener("change", () => {
-            useAsterion = checkbox.checked;
-            input.style.display = useAsterion ? "inline-block" : "none";
-            save();
-          });
-
-          input.addEventListener("change", () => {
-            let val = parseFloat(input.value);
-            if (isNaN(val) || val <= 0) val = 1;
-            asterionValue = +val.toFixed(3);
-            save();
-          });
-
-          asterionContainer.appendChild(checkbox);
-          asterionContainer.appendChild(label);
-          asterionContainer.appendChild(input);
-
-          meta.appendChild(asterionContainer);
-        }
-
-        let damageLimitContainer = document.getElementById(
-          "damageLimitContainer",
-        );
-        if (!damageLimitContainer) {
-          damageLimitContainer = document.createElement("div");
-          damageLimitContainer.id = "damageLimitContainer";
-          damageLimitContainer.className = "attack-strat-damage-limit";
-
-          // Checkbox container
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.id = "useDamageLimitCheckbox";
-          checkbox.checked = useDamageLimit;
-          checkbox.className = "attack-strat-checkbox";
-
-          const label = document.createElement("label");
-          label.htmlFor = "useDamageLimitCheckbox";
-          label.className = "attack-strat-label";
-          label.textContent = "Use Damage Limit (useful for crits) ";
-
-          // Number input
-          const input = document.createElement("input");
-          input.type = "number";
-          input.min = "0";
-          input.value = damageLimitValue.toString();
-          input.id = "damageLimitInput";
-          input.className = "attack-strat-damage-limit-input";
-          input.style.display = useDamageLimit ? "inline-block" : "none";
-
-          checkbox.addEventListener("change", () => {
-            useDamageLimit = checkbox.checked;
-            input.style.display = useAsterion ? "inline-block" : "none";
-            save();
-          });
-
-          input.addEventListener("change", () => {
-            let val = parseFloat(input.value);
-            if (isNaN(val) || val <= 0) val = 1;
-            damageLimitValue = +val.toFixed(3);
-            save();
-          });
-
-          damageLimitContainer.appendChild(checkbox);
-          damageLimitContainer.appendChild(label);
-          damageLimitContainer.appendChild(input);
-
-          meta.appendChild(damageLimitContainer);
-        }
-
-        // ----------  Parallel Joins Settings Checkbox ----------
-        // let useParallelJoinsSettingsContainer = document.getElementById(
-        //   "useParallelJoinsSettingsContainer"
-        // );
-        // if (!useParallelJoinsSettingsContainer) {
-        //   useParallelJoinsSettingsContainer = document.createElement("div");
-        //   useParallelJoinsSettingsContainer.id =
-        //     "useParallelJoinsSettingsContainer";
-        //   useParallelJoinsSettingsContainer.className =
-        //     "parallel-joins-settings-container";
-
-        //   // Checkbox container
-        //   const checkbox = document.createElement("input");
-        //   checkbox.type = "checkbox";
-        //   checkbox.id = "parallelJoinsSettingCheckbox";
-        //   checkbox.checked = useParallelJoins;
-        //   checkbox.className = "attack-strat-checkbox";
-
-        //   const label = document.createElement("label");
-        //   label.htmlFor = "parallelJoinsSettingCheckbox";
-        //   label.className = "attack-strat-label";
-        //   label.textContent = "Join monsters in parallel (faster)";
-
-        //   checkbox.addEventListener("change", () => {
-        //     useParallelJoins = checkbox.checked;
-        //     save();
-        //   });
-
-        //   useParallelJoinsSettingsContainer.appendChild(checkbox);
-        //   useParallelJoinsSettingsContainer.appendChild(label);
-
-        //   meta.appendChild(useParallelJoinsSettingsContainer);
-        // }
-      }
-
-      function renderStrategy() {
-        chipsWrap.innerHTML = "";
-
-        attackStrategy.forEach((skill, index) => {
-          const chip = document.createElement("div");
-          chip.className = "attack-strat-chip";
-
-          const label = document.createElement("span");
-          label.className = "attack-strat-chip-label";
-          label.textContent = skill;
-
-          const controls = document.createElement("div");
-          controls.className = "attack-strat-chip-controls";
-
-          const up = document.createElement("button");
-          up.className = "attack-strat-chip-btn attack-strat-chip-up";
-          up.textContent = "↑";
-          up.title = "Move up";
-
-          const down = document.createElement("button");
-          down.className = "attack-strat-chip-btn attack-strat-chip-down";
-          down.textContent = "↓";
-          down.title = "Move down";
-
-          const remove = document.createElement("button");
-          remove.className = "attack-strat-chip-btn attack-strat-chip-remove";
-          remove.textContent = "✕";
-          remove.title = "Remove";
-
-          if (index === 0) up.classList.add("is-disabled");
-          if (index === attackStrategy.length - 1)
-            down.classList.add("is-disabled");
-
-          up.onclick = () => {
-            if (index === 0) return;
-            [attackStrategy[index - 1], attackStrategy[index]] = [
-              attackStrategy[index],
-              attackStrategy[index - 1],
-            ];
-            save();
-            renderStrategy();
-          };
-
-          down.onclick = () => {
-            if (index === attackStrategy.length - 1) return;
-            [attackStrategy[index + 1], attackStrategy[index]] = [
-              attackStrategy[index],
-              attackStrategy[index + 1],
-            ];
-            save();
-            renderStrategy();
-          };
-
-          remove.onclick = () => {
-            attackStrategy.splice(index, 1);
-            save();
-            renderStrategy();
-          };
-
-          controls.append(up, down, remove);
-          chip.append(label, controls);
-          chipsWrap.appendChild(chip);
-        });
-
-        renderMeta();
-      }
-
-      // ---------- Skill Picker ----------
-      Object.keys(Skills).forEach((skillName) => {
-        const btn = document.createElement("button");
-        btn.className = "btn attack-strat-skill-btn";
-        btn.textContent = skillName;
-
-        btn.onclick = () => {
-          attackStrategy.push(skillName);
-          save();
-          renderStrategy();
-        };
-
-        picker.appendChild(btn);
-      });
-
-      renderStrategy();
-    }
-
-    (function injectAttackSettings() {
-      const enableCustomAttackStrategy = Storage.get(
-        "ui-improvements:enableCustomAttackStrategy",
-        true,
-      );
-      if (enableCustomAttackStrategy) {
-        const actions = document.querySelector(".qol-select-actions");
-        if (!actions) return;
-
-        // Prevent duplicates
-        if (actions.querySelector(".btnAttackSettings")) return;
-
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "btn btnAttackSettings";
-        btn.textContent = "⚙️ 🧠 Settings";
-
-        actions.appendChild(btn);
-
-        btn.addEventListener("click", openAttackSettingsModal);
-      }
-    })();
-
-    let strategyAttackBtn;
-
-    function updateAttackButtons() {
-      // console.log("updating attack buttons!");
-      const asterionValue =
-        parseFloat(Storage.get("ui-improvements:asterionValue")) || 1;
-      const useAsterion = Storage.get("ui-improvements:useAsterion") || false;
-
-      const attackButtons = document.querySelectorAll(".btnQuickJoinAttack");
-      if (attackButtons) {
-        // console.log(attackButtons);
-        attackButtons.forEach((btn) => {
-          const text = btn.textContent.trim();
-          // console.log(text);
-
-          const cost = useAsterion
-            ? Math.ceil(btn.dataset.stam * asterionValue)
-            : btn.dataset.stam;
-
-          const updatedText = `⚡ Quick Join & Attack (${cost})`;
-          btn.textContent = updatedText;
-        });
-      }
-    }
-
-    (async function injectAttackStratButton() {
-      const enableCustomAttackStrategy = Storage.get(
-        "ui-improvements:enableCustomAttackStrategy",
-        true,
-      );
-
-      if (enableCustomAttackStrategy) {
-        const attacksWrap = document.querySelector(".qol-attacks");
-        if (!attacksWrap) return;
-
-        const useAsterion = Storage.get("ui-improvements:useAsterion") || false;
-        if (useAsterion) {
-          updateAttackButtons();
-        }
-
-        // Prevent duplicate injection
-        if (attacksWrap.querySelector(".btnAttackStrat")) return;
-
-        let useDamageLimit = Storage.get(
-          "ui-improvements:useDamageLimit",
-          false,
-        );
-        let damageLimitValue = parseFloat(
-          Storage.get("ui-improvements:damageLimitValue") || 0,
-        );
-
-        let newButtonString = `🧠 Quick Join & Attack (${getAttackStrategyCost(
-          attackStrategy,
-        )}) `;
-
-        if (useDamageLimit) {
-          newButtonString += `(limit ${formatShortNumber(damageLimitValue)})`;
-        }
-
-        strategyAttackBtn = document.createElement("button");
-        strategyAttackBtn.type = "button";
-        strategyAttackBtn.className = "btn btnAttackStrat";
-        strategyAttackBtn.textContent = newButtonString;
-
-        // Match styling but distinguish it
-        strategyAttackBtn.style.background = "#7c3aed";
-        strategyAttackBtn.style.borderColor = "#7c3aed";
-
-        attacksWrap.appendChild(strategyAttackBtn);
-
-        strategyAttackBtn.addEventListener("click", async () => {
-          const ids = getSelectedMonsterIds();
-          // const useParallelJoins = Storage.get(
-          //   "ui-improvements:useParallelJoins",
-          //   true
-          // );
-          if (!ids.length) {
-            showStatus("Select at least 1 monster.");
-            return;
-          }
-
-          if (!JOIN_URL || !ATTACK_URL) {
-            showStatus("Quick Join/Attack endpoints are not configured.");
-            return;
-          }
-
-          setQuickBtnsRunning(true);
-          showStatus(`Running attack strategy on ${ids.length} monsters...`);
-
-          const results = [];
-
-          const runTask = async (id, i) => {
-            showStatus(
-              `(${i + 1}/${ids.length}) Strategy attacking monster #${id}...`,
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+
+            overlay.addEventListener("click", (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+
+            modal
+                .querySelector("#attackStratClose")
+                .addEventListener("click", () => overlay.remove());
+
+            const picker = modal.querySelector("#skillPicker");
+            const chipsWrap = modal.querySelector("#strategyChips");
+            const meta = modal.querySelector("#strategyMeta");
+
+            // Load settings localStorage
+            let useAsterion = Storage.get("ui-improvements:useAsterion", false);
+            let asterionValue = parseFloat(
+                Storage.get("ui-improvements:asterionValue") || 1,
             );
-
-            const card = document.querySelector(
-              `.monster-card[data-monster-id="${id}"]`,
+            let useDamageLimit = Storage.get("ui-improvements:useDamageLimit", false);
+            let damageLimitValue = parseFloat(
+                Storage.get("ui-improvements:damageLimitValue") || 0,
             );
+            // let useParallelJoins = Storage.get(
+            //   "ui-improvements:useParallelJoins",
+            //   true
+            // );
 
-            const alreadyJoined = card && card.dataset.joined === "1";
-            let joinRes = { ok: true, msg: "" };
-            const startJoinTime = performance.now();
-            if (!alreadyJoined) {
-              try {
-                joinRes = await doJoin(id);
-              } catch {
-                joinRes = { ok: false, msg: "Join request failed" };
-              }
+            // ---------- Helpers ----------
+            function save() {
+                Storage.set("ui-improvements:attackStrategy", attackStrategy);
+                Storage.set("ui-improvements:useAsterion", useAsterion);
+                Storage.set("ui-improvements:asterionValue", asterionValue);
+                Storage.set("ui-improvements:useDamageLimit", useDamageLimit);
+                Storage.set("ui-improvements:damageLimitValue", damageLimitValue);
 
-              if (!joinRes.ok) {
-                const msgEl = document.createElement("div");
-                msgEl.textContent = "Skipped (join failed)";
-                return {
-                  monsterId: id,
-                  joinMsg: joinRes.msg,
-                  ok: false,
-                  msgEl,
-                };
-              }
+                // Storage.set("ui-improvements:useParallelJoins", useParallelJoins);
+                // useParallelJoinsInput.checked = useParallelJoins;
 
-              if (card) {
-                card.dataset.joined = "1";
-                card.dataset.unjoined = "0";
-              }
+                // update the strategic attack button on the main page
+                let newButtonString = `🧠 Quick Join & Attack (${getAttackStrategyCost(
+                    attackStrategy,
+                )}) `;
+                if (useDamageLimit) {
+                    newButtonString += `(limit ${formatShortNumber(damageLimitValue)})`;
+                }
+                strategyAttackBtn.textContent = newButtonString;
+                updateAttackButtons();
+                renderMeta();
             }
 
-            const atkResults = await performAttackStrat(
-              id,
-              attackStrategy,
-              startJoinTime,
-            );
+            function renderMeta() {
+                let total = getAttackStrategyCost(attackStrategy);
 
-            const resultsEl = document.createElement("div");
-            for (const result of atkResults) {
-              resultsEl.appendChild(result.msgEl);
-            }
+                meta.innerHTML = `Total stamina cost: <span class="total-stam-cost">${total}</span>`;
 
-            return {
-              monsterId: id,
-              joinMsg: joinRes.msg,
-              ok: atkResults.every((r) => r.ok),
-              msgEl: resultsEl,
-            };
-          };
+                // ----------  Use Asterion ----------
+                let asterionContainer = document.getElementById("asterionContainer");
+                if (!asterionContainer) {
+                    asterionContainer = document.createElement("div");
+                    asterionContainer.id = "asterionContainer";
+                    asterionContainer.className = "attack-strat-asterion";
 
-          // if (useParallelJoins) {
-          //   // ⚡ PARALLEL
-          //   const tasks = ids.map((id, i) => runTask(id, i));
-          //   results.push(...(await Promise.all(tasks)));
-          // } else {
-          // 🐢 SEQUENTIAL
-          for (let i = 0; i < ids.length; i++) {
-            results.push(await runTask(ids[i], i));
-          }
-          // }
+                    // Checkbox container
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.id = "useAsterionCheckbox";
+                    checkbox.checked = useAsterion;
+                    checkbox.className = "attack-strat-checkbox";
 
-          showStatus("Strategy complete.");
-          setQuickBtnsRunning(false);
-          openBatchAttackModal(results);
-        });
-      }
-    })();
+                    const label = document.createElement("label");
+                    label.htmlFor = "useAsterionCheckbox";
+                    label.className = "attack-strat-label";
+                    label.textContent = "Calculate Using Asterion";
 
-    // ------------- Custom Attack Strategy ------------//
+                    // Number input
+                    const input = document.createElement("input");
+                    input.type = "number";
+                    input.min = "1";
+                    input.step = 0.5;
+                    input.value = asterionValue.toString();
+                    input.id = "asterionInput";
+                    input.className = "attack-strat-asterion-input";
+                    input.style.display = useAsterion ? "inline-block" : "none";
 
-    // --------------- Filter Mobs by HP -------------- //
-    (function hpSettings() {
-      const { container: sortMobsByHpInSettingsToggle } = createSettingsInput({
-        key: "ui-improvements:sortByHp",
-        id: "sortByHp",
-        label: "Sort By Hp",
-        defaultValue: false,
-        type: "checkbox",
-        inputProps: { slider: true },
-        onChange: () => {
-          refreshPage();
-        },
-      });
+                    checkbox.addEventListener("change", () => {
+                        useAsterion = checkbox.checked;
+                        input.style.display = useAsterion ? "inline-block" : "none";
+                        save();
+                    });
 
-      const capCheckbox = document.getElementById("fCapNotReached");
-      if (!capCheckbox) return;
+                    input.addEventListener("change", () => {
+                        let val = parseFloat(input.value);
+                        if (isNaN(val) || val <= 0) val = 1;
+                        asterionValue = +val.toFixed(3);
+                        save();
+                    });
 
-      // Insert after CAP not reached label
-      const capLabel = capCheckbox.closest("label");
-      capLabel.insertAdjacentElement("afterend", sortMobsByHpInSettingsToggle);
-    })();
+                    asterionContainer.appendChild(checkbox);
+                    asterionContainer.appendChild(label);
+                    asterionContainer.appendChild(input);
 
-    function filterAndSortByHp() {
-      if (!(sortByHp || filterByHp)) {
-        return;
-      }
-      const container = document.querySelector(".monster-container");
-      if (!container) return;
+                    meta.appendChild(asterionContainer);
+                }
 
-      const cards = Array.from(container.querySelectorAll(".monster-card"));
-
-      // Extract HP data
-      const parsed = cards.map((card) => {
-        const hpText = card.querySelector(
-          ".stat-icon.hp + .stat-main .stat-value",
-        )?.textContent;
-
-        if (!hpText) {
-          return { card, currentHp: 0, maxHp: 0, percent: 0 };
-        }
-
-        const [current, max] = hpText
-          .split("/")
-          .map((v) => Number(v.replace(/,/g, "").trim()));
-
-        return {
-          card,
-          currentHp: current,
-          maxHp: max,
-          percent: max ? current / max : 0,
-        };
-      });
-
-      // FILTER
-      if (filterByHp) {
-        parsed.forEach((item) => {
-          const hp = item.currentHp;
-
-          if (hp < minHpValue || hp > maxHpValue) {
-            item.card.style.display = "none";
-          }
-        });
-      }
-
-      // SORT
-      if (sortByHp) {
-        parsed
-          .filter((item) => item.card.style.display !== "none")
-          .sort((a, b) => a.currentHp - b.currentHp) // lowest HP first
-          .forEach((item) => container.appendChild(item.card));
-      }
-    }
-
-    // --------------- Filter Mobs by HP -------------- //
-
-    // --------- Group Mobs in their own row ----------- //
-    const useGroupedMobs = Storage.get("ui-imrovements:useGroupedMobs", false);
-
-    (function groupMobs() {
-      const capCheckbox = document.getElementById("fCapNotReached");
-      if (!capCheckbox) return;
-
-      filterAndSortByHp();
-
-      const { container: useGroupedMobsToggle } = createSettingsInput({
-        key: "ui-imrovements:useGroupedMobs",
-        id: "sortByHp",
-        label: "Use Groups",
-        defaultValue: false,
-        type: "checkbox",
-        inputProps: { slider: true },
-        onChange: () => {
-          refreshPage();
-        },
-      });
-
-      // Insert after CAP not reached label
-      const capLabel = capCheckbox.closest("label");
-      capLabel.insertAdjacentElement("afterend", useGroupedMobsToggle);
-
-      if (useGroupedMobs) {
-        const container = document.querySelector(".monster-container");
-        const cards = Array.from(container.querySelectorAll(".monster-card"));
-        const filterSelect = document.querySelector("#fNameSel");
-        const filterValue = filterSelect.value;
-
-        filterSelect.dataset.prev = filterSelect.value;
-
-        filterSelect.addEventListener("change", (e) => {
-          const prev = e.target.dataset.prev;
-          const curr = e.target.value;
-
-          e.target.dataset.prev = curr;
-          if (prev === "" || curr === "") {
-            setTimeout(() => {
-              refreshPage();
-            }, 300);
-          }
-        });
-
-        if (filterValue === "") {
-          container.className = `${container.className} custom-monster-container`;
-          const groups = new Map();
-
-          // Group cards by data-name
-          cards.forEach((card) => {
-            const name = card.dataset.name;
-            if (!groups.has(name)) {
-              groups.set(name, []);
-            }
-            groups.get(name).push(card);
-          });
-
-          // Clear container
-          container.innerHTML = "";
-
-          // Rebuild grouped + sorted rows
-          groups.forEach((groupCards, name) => {
-            // 🔑 Sort cards by data-monster-id (numeric)
-            if (!sortByHp) {
-              groupCards.sort((a, b) => {
-                return (
-                  Number(a.dataset.monsterId) - Number(b.dataset.monsterId)
+                let damageLimitContainer = document.getElementById(
+                    "damageLimitContainer",
                 );
-              });
+                if (!damageLimitContainer) {
+                    damageLimitContainer = document.createElement("div");
+                    damageLimitContainer.id = "damageLimitContainer";
+                    damageLimitContainer.className = "attack-strat-damage-limit";
+
+                    // Checkbox container
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.id = "useDamageLimitCheckbox";
+                    checkbox.checked = useDamageLimit;
+                    checkbox.className = "attack-strat-checkbox";
+
+                    const label = document.createElement("label");
+                    label.htmlFor = "useDamageLimitCheckbox";
+                    label.className = "attack-strat-label";
+                    label.textContent = "Use Damage Limit (useful for crits) ";
+
+                    // Number input
+                    const input = document.createElement("input");
+                    input.type = "number";
+                    input.min = "0";
+                    input.value = damageLimitValue.toString();
+                    input.id = "damageLimitInput";
+                    input.className = "attack-strat-damage-limit-input";
+                    input.style.display = useDamageLimit ? "inline-block" : "none";
+
+                    checkbox.addEventListener("change", () => {
+                        useDamageLimit = checkbox.checked;
+                        input.style.display = useAsterion ? "inline-block" : "none";
+                        save();
+                    });
+
+                    input.addEventListener("change", () => {
+                        let val = parseFloat(input.value);
+                        if (isNaN(val) || val <= 0) val = 1;
+                        damageLimitValue = +val.toFixed(3);
+                        save();
+                    });
+
+                    damageLimitContainer.appendChild(checkbox);
+                    damageLimitContainer.appendChild(label);
+                    damageLimitContainer.appendChild(input);
+
+                    meta.appendChild(damageLimitContainer);
+                }
+
+                // ----------  Parallel Joins Settings Checkbox ----------
+                // let useParallelJoinsSettingsContainer = document.getElementById(
+                //   "useParallelJoinsSettingsContainer"
+                // );
+                // if (!useParallelJoinsSettingsContainer) {
+                //   useParallelJoinsSettingsContainer = document.createElement("div");
+                //   useParallelJoinsSettingsContainer.id =
+                //     "useParallelJoinsSettingsContainer";
+                //   useParallelJoinsSettingsContainer.className =
+                //     "parallel-joins-settings-container";
+
+                //   // Checkbox container
+                //   const checkbox = document.createElement("input");
+                //   checkbox.type = "checkbox";
+                //   checkbox.id = "parallelJoinsSettingCheckbox";
+                //   checkbox.checked = useParallelJoins;
+                //   checkbox.className = "attack-strat-checkbox";
+
+                //   const label = document.createElement("label");
+                //   label.htmlFor = "parallelJoinsSettingCheckbox";
+                //   label.className = "attack-strat-label";
+                //   label.textContent = "Join monsters in parallel (faster)";
+
+                //   checkbox.addEventListener("change", () => {
+                //     useParallelJoins = checkbox.checked;
+                //     save();
+                //   });
+
+                //   useParallelJoinsSettingsContainer.appendChild(checkbox);
+                //   useParallelJoinsSettingsContainer.appendChild(label);
+
+                //   meta.appendChild(useParallelJoinsSettingsContainer);
+                // }
             }
 
-            const row = document.createElement("div");
-            row.className = "monster-row";
-            row.dataset.name = name;
+            function renderStrategy() {
+                chipsWrap.innerHTML = "";
 
-            groupCards.forEach((card) => row.appendChild(card));
-            container.appendChild(row);
-          });
+                attackStrategy.forEach((skill, index) => {
+                    const chip = document.createElement("div");
+                    chip.className = "attack-strat-chip";
+
+                    const label = document.createElement("span");
+                    label.className = "attack-strat-chip-label";
+                    label.textContent = skill;
+
+                    const controls = document.createElement("div");
+                    controls.className = "attack-strat-chip-controls";
+
+                    const up = document.createElement("button");
+                    up.className = "attack-strat-chip-btn attack-strat-chip-up";
+                    up.textContent = "↑";
+                    up.title = "Move up";
+
+                    const down = document.createElement("button");
+                    down.className = "attack-strat-chip-btn attack-strat-chip-down";
+                    down.textContent = "↓";
+                    down.title = "Move down";
+
+                    const remove = document.createElement("button");
+                    remove.className = "attack-strat-chip-btn attack-strat-chip-remove";
+                    remove.textContent = "✕";
+                    remove.title = "Remove";
+
+                    if (index === 0) up.classList.add("is-disabled");
+                    if (index === attackStrategy.length - 1)
+                        down.classList.add("is-disabled");
+
+                    up.onclick = () => {
+                        if (index === 0) return;
+                        [attackStrategy[index - 1], attackStrategy[index]] = [
+                            attackStrategy[index],
+                            attackStrategy[index - 1],
+                        ];
+                        save();
+                        renderStrategy();
+                    };
+
+                    down.onclick = () => {
+                        if (index === attackStrategy.length - 1) return;
+                        [attackStrategy[index + 1], attackStrategy[index]] = [
+                            attackStrategy[index],
+                            attackStrategy[index + 1],
+                        ];
+                        save();
+                        renderStrategy();
+                    };
+
+                    remove.onclick = () => {
+                        attackStrategy.splice(index, 1);
+                        save();
+                        renderStrategy();
+                    };
+
+                    controls.append(up, down, remove);
+                    chip.append(label, controls);
+                    chipsWrap.appendChild(chip);
+                });
+
+                renderMeta();
+            }
+
+            // ---------- Skill Picker ----------
+            Object.keys(Skills).forEach((skillName) => {
+                const btn = document.createElement("button");
+                btn.className = "btn attack-strat-skill-btn";
+                btn.textContent = skillName;
+
+                btn.onclick = () => {
+                    attackStrategy.push(skillName);
+                    save();
+                    renderStrategy();
+                };
+
+                picker.appendChild(btn);
+            });
+
+            renderStrategy();
         }
-      }
-    })();
-    // --------- Group Mobs in their own row ----------- //
 
-    // -------------- Unlock select all ---------------- //
-    if (unlockSelectLimit) {
-      const btnSel = document.getElementById("btnSelectVisible");
+        (function injectAttackSettings() {
+            const enableCustomAttackStrategy = Storage.get(
+                "ui-improvements:enableCustomAttackStrategy",
+                true,
+            );
+            if (enableCustomAttackStrategy) {
+                const actions = document.querySelector(".qol-select-actions");
+                if (!actions) return;
 
-      btnSel?.addEventListener("click", () => {
-        let picked = 0;
-        const cards = document.querySelectorAll(".monster-card");
-        cards.forEach((card) => {
-          if (card.dataset.dead === "1") return;
-          if (card.style.display === "none") return;
+                // Prevent duplicates
+                if (actions.querySelector(".btnAttackSettings")) return;
 
-          const cb = card.querySelector(".pickMonster");
-          if (cb) {
-            cb.checked = true;
-            picked++;
-          }
-        });
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "btn btnAttackSettings";
+                btn.textContent = "⚙️ 🧠 Settings";
 
-        const statusEl = document.getElementById("batchAttackStatus");
-        if (!statusEl) return;
-        statusEl.innerHTML = `Selected: <b>${picked}/${cards.length}</b>`;
-      });
-    }
+                actions.appendChild(btn);
 
-    // -------------- Unlock select all ---------------- //
+                btn.addEventListener("click", openAttackSettingsModal);
+            }
+        })();
 
-    // -------------- Gate Info Scroll Removal ---------------- //
-    if (disableGateInfo) {
-      const gateInfoScroll = document.querySelector(".gate-info-scroll");
-      if (gateInfoScroll) {
-        gateInfoScroll.innerHTML = `<div class="gate-desc">Gate info hidden, check wave page options in veyra-hud settings to enable it</div>`;
-      }
-    }
-    // -------------- Gate Info Scroll Removal ---------------- //
+        let strategyAttackBtn;
 
-    // --------- Move Auto Farmer Action Buttons -------------- //
+        function updateAttackButtons() {
+            // console.log("updating attack buttons!");
+            const asterionValue =
+                  parseFloat(Storage.get("ui-improvements:asterionValue")) || 1;
+            const useAsterion = Storage.get("ui-improvements:useAsterion") || false;
 
-    const btnStyle = `
+            const attackButtons = document.querySelectorAll(".btnQuickJoinAttack");
+            if (attackButtons) {
+                // console.log(attackButtons);
+                attackButtons.forEach((btn) => {
+                    const text = btn.textContent.trim();
+                    // console.log(text);
+
+                    const cost = useAsterion
+                    ? Math.ceil(btn.dataset.stam * asterionValue)
+                    : btn.dataset.stam;
+
+                    const updatedText = `⚡ Quick Join & Attack (${cost})`;
+                    btn.textContent = updatedText;
+                });
+            }
+        }
+
+        (async function injectAttackStratButton() {
+            const enableCustomAttackStrategy = Storage.get(
+                "ui-improvements:enableCustomAttackStrategy",
+                true,
+            );
+
+            if (enableCustomAttackStrategy) {
+                const attacksWrap = document.querySelector(".qol-attacks");
+                if (!attacksWrap) return;
+
+                const useAsterion = Storage.get("ui-improvements:useAsterion") || false;
+                if (useAsterion) {
+                    updateAttackButtons();
+                }
+
+                // Prevent duplicate injection
+                if (attacksWrap.querySelector(".btnAttackStrat")) return;
+
+                let useDamageLimit = Storage.get(
+                    "ui-improvements:useDamageLimit",
+                    false,
+                );
+                let damageLimitValue = parseFloat(
+                    Storage.get("ui-improvements:damageLimitValue") || 0,
+                );
+
+                let newButtonString = `🧠 Quick Join & Attack (${getAttackStrategyCost(
+                    attackStrategy,
+                )}) `;
+
+                if (useDamageLimit) {
+                    newButtonString += `(limit ${formatShortNumber(damageLimitValue)})`;
+                }
+
+                strategyAttackBtn = document.createElement("button");
+                strategyAttackBtn.type = "button";
+                strategyAttackBtn.className = "btn btnAttackStrat";
+                strategyAttackBtn.textContent = newButtonString;
+
+                // Match styling but distinguish it
+                strategyAttackBtn.style.background = "#7c3aed";
+                strategyAttackBtn.style.borderColor = "#7c3aed";
+
+                attacksWrap.appendChild(strategyAttackBtn);
+
+                strategyAttackBtn.addEventListener("click", async () => {
+                    const ids = getSelectedMonsterIds();
+                    // const useParallelJoins = Storage.get(
+                    //   "ui-improvements:useParallelJoins",
+                    //   true
+                    // );
+                    if (!ids.length) {
+                        showStatus("Select at least 1 monster.");
+                        return;
+                    }
+
+                    if (!JOIN_URL || !ATTACK_URL) {
+                        showStatus("Quick Join/Attack endpoints are not configured.");
+                        return;
+                    }
+
+                    setQuickBtnsRunning(true);
+                    showStatus(`Running attack strategy on ${ids.length} monsters...`);
+
+                    const results = [];
+
+                    const runTask = async (id, i) => {
+                        showStatus(
+                            `(${i + 1}/${ids.length}) Strategy attacking monster #${id}...`,
+                        );
+
+                        const card = document.querySelector(
+                            `.monster-card[data-monster-id="${id}"]`,
+                        );
+
+                        const alreadyJoined = card && card.dataset.joined === "1";
+                        let joinRes = { ok: true, msg: "" };
+                        const startJoinTime = performance.now();
+                        if (!alreadyJoined) {
+                            try {
+                                joinRes = await doJoin(id);
+                            } catch {
+                                joinRes = { ok: false, msg: "Join request failed" };
+                            }
+
+                            if (!joinRes.ok) {
+                                const msgEl = document.createElement("div");
+                                msgEl.textContent = "Skipped (join failed)";
+                                return {
+                                    monsterId: id,
+                                    joinMsg: joinRes.msg,
+                                    ok: false,
+                                    msgEl,
+                                };
+                            }
+
+                            if (card) {
+                                card.dataset.joined = "1";
+                                card.dataset.unjoined = "0";
+                            }
+                        }
+
+                        const atkResults = await performAttackStrat(
+                            id,
+                            attackStrategy,
+                            startJoinTime,
+                        );
+
+                        const resultsEl = document.createElement("div");
+                        for (const result of atkResults) {
+                            resultsEl.appendChild(result.msgEl);
+                        }
+
+                        return {
+                            monsterId: id,
+                            joinMsg: joinRes.msg,
+                            ok: atkResults.every((r) => r.ok),
+                            msgEl: resultsEl,
+                        };
+                    };
+
+                    // if (useParallelJoins) {
+                    //   // ⚡ PARALLEL
+                    //   const tasks = ids.map((id, i) => runTask(id, i));
+                    //   results.push(...(await Promise.all(tasks)));
+                    // } else {
+                    // 🐢 SEQUENTIAL
+                    for (let i = 0; i < ids.length; i++) {
+                        results.push(await runTask(ids[i], i));
+                    }
+                    // }
+
+                    showStatus("Strategy complete.");
+                    setQuickBtnsRunning(false);
+                    openBatchAttackModal(results);
+                });
+            }
+        })();
+
+        // ------------- Custom Attack Strategy ------------//
+
+        // --------------- Filter Mobs by HP -------------- //
+        (function hpSettings() {
+            const { container: sortMobsByHpInSettingsToggle } = createSettingsInput({
+                key: "ui-improvements:sortByHp",
+                id: "sortByHp",
+                label: "Sort By Hp",
+                defaultValue: false,
+                type: "checkbox",
+                inputProps: { slider: true },
+                onChange: () => {
+                    refreshPage();
+                },
+            });
+
+            const capCheckbox = document.getElementById("fCapNotReached");
+            if (!capCheckbox) return;
+
+            // Insert after CAP not reached label
+            const capLabel = capCheckbox.closest("label");
+            capLabel.insertAdjacentElement("afterend", sortMobsByHpInSettingsToggle);
+        })();
+
+        function filterAndSortByHp() {
+            if (!(sortByHp || filterByHp)) {
+                return;
+            }
+            const container = document.querySelector(".monster-container");
+            if (!container) return;
+
+            const cards = Array.from(container.querySelectorAll(".monster-card"));
+
+            // Extract HP data
+            const parsed = cards.map((card) => {
+                const hpText = card.querySelector(
+                    ".stat-icon.hp + .stat-main .stat-value",
+                )?.textContent;
+
+                if (!hpText) {
+                    return { card, currentHp: 0, maxHp: 0, percent: 0 };
+                }
+
+                const [current, max] = hpText
+                .split("/")
+                .map((v) => Number(v.replace(/,/g, "").trim()));
+
+                return {
+                    card,
+                    currentHp: current,
+                    maxHp: max,
+                    percent: max ? current / max : 0,
+                };
+            });
+
+            // FILTER
+            if (filterByHp) {
+                parsed.forEach((item) => {
+                    const hp = item.currentHp;
+
+                    if (hp < minHpValue || hp > maxHpValue) {
+                        item.card.style.display = "none";
+                    }
+                });
+            }
+
+            // SORT
+            if (sortByHp) {
+                parsed
+                    .filter((item) => item.card.style.display !== "none")
+                    .sort((a, b) => a.currentHp - b.currentHp) // lowest HP first
+                    .forEach((item) => container.appendChild(item.card));
+            }
+        }
+
+        // --------------- Filter Mobs by HP -------------- //
+
+        // --------- Group Mobs in their own row ----------- //
+        const useGroupedMobs = Storage.get("ui-imrovements:useGroupedMobs", false);
+
+        (function groupMobs() {
+            const capCheckbox = document.getElementById("fCapNotReached");
+            if (!capCheckbox) return;
+
+            filterAndSortByHp();
+
+            const { container: useGroupedMobsToggle } = createSettingsInput({
+                key: "ui-imrovements:useGroupedMobs",
+                id: "sortByHp",
+                label: "Use Groups",
+                defaultValue: false,
+                type: "checkbox",
+                inputProps: { slider: true },
+                onChange: () => {
+                    refreshPage();
+                },
+            });
+
+            // Insert after CAP not reached label
+            const capLabel = capCheckbox.closest("label");
+            capLabel.insertAdjacentElement("afterend", useGroupedMobsToggle);
+
+            if (useGroupedMobs) {
+                const container = document.querySelector(".monster-container");
+                const cards = Array.from(container.querySelectorAll(".monster-card"));
+                const filterSelect = document.querySelector("#fNameSel");
+                const filterValue = filterSelect.value;
+
+                filterSelect.dataset.prev = filterSelect.value;
+
+                filterSelect.addEventListener("change", (e) => {
+                    const prev = e.target.dataset.prev;
+                    const curr = e.target.value;
+
+                    e.target.dataset.prev = curr;
+                    if (prev === "" || curr === "") {
+                        setTimeout(() => {
+                            refreshPage();
+                        }, 300);
+                    }
+                });
+
+                if (filterValue === "") {
+                    container.className = `${container.className} custom-monster-container`;
+                    const groups = new Map();
+
+                    // Group cards by data-name
+                    cards.forEach((card) => {
+                        const name = card.dataset.name;
+                        if (!groups.has(name)) {
+                            groups.set(name, []);
+                        }
+                        groups.get(name).push(card);
+                    });
+
+                    // Clear container
+                    container.innerHTML = "";
+
+                    // Rebuild grouped + sorted rows
+                    groups.forEach((groupCards, name) => {
+                        // 🔑 Sort cards by data-monster-id (numeric)
+                        if (!sortByHp) {
+                            groupCards.sort((a, b) => {
+                                return (
+                                    Number(a.dataset.monsterId) - Number(b.dataset.monsterId)
+                                );
+                            });
+                        }
+
+                        const row = document.createElement("div");
+                        row.className = "monster-row";
+                        row.dataset.name = name;
+
+                        groupCards.forEach((card) => row.appendChild(card));
+                        container.appendChild(row);
+                    });
+                }
+            }
+        })();
+        // --------- Group Mobs in their own row ----------- //
+
+        // -------------- Unlock select all ---------------- //
+        if (unlockSelectLimit) {
+            const btnSel = document.getElementById("btnSelectVisible");
+
+            btnSel?.addEventListener("click", () => {
+                let picked = 0;
+                const cards = document.querySelectorAll(".monster-card");
+                cards.forEach((card) => {
+                    if (card.dataset.dead === "1") return;
+                    if (card.style.display === "none") return;
+
+                    const cb = card.querySelector(".pickMonster");
+                    if (cb) {
+                        cb.checked = true;
+                        picked++;
+                    }
+                });
+
+                const statusEl = document.getElementById("batchAttackStatus");
+                if (!statusEl) return;
+                statusEl.innerHTML = `Selected: <b>${picked}/${cards.length}</b>`;
+            });
+        }
+
+        // -------------- Unlock select all ---------------- //
+
+        // -------------- Gate Info Scroll Removal ---------------- //
+        if (disableGateInfo) {
+            const gateInfoScroll = document.querySelector(".gate-info-scroll");
+            if (gateInfoScroll) {
+                gateInfoScroll.innerHTML = `<div class="gate-desc">Gate info hidden, check wave page options in veyra-hud settings to enable it</div>`;
+            }
+        }
+        // -------------- Gate Info Scroll Removal ---------------- //
+
+        // --------- Move Auto Farmer Action Buttons -------------- //
+
+        const btnStyle = `
       background: #333;
       border: none;
       border-radius: 8px;
@@ -2650,549 +2965,549 @@ v2.2.2:
       box-shadow: 0 6px 18px rgba(0, 0, 0, .6);
     `;
 
-    const toggleBtn = document.getElementById("afToggleBtn");
-    const startBtn = document.getElementById("afStartBtn");
-    const pauseBtn = document.getElementById("afPauseBtn");
-    const resetBtn = document.getElementById("afResetBtn");
+        const toggleBtn = document.getElementById("afToggleBtn");
+        const startBtn = document.getElementById("afStartBtn");
+        const pauseBtn = document.getElementById("afPauseBtn");
+        const resetBtn = document.getElementById("afResetBtn");
 
-    const headerActions = toggleBtn?.parentElement;
+        const headerActions = toggleBtn?.parentElement;
 
-    if (headerActions) {
-      if (startBtn) {
-        startBtn.style.cssText = btnStyle;
-        startBtn.className = "";
-        headerActions.insertBefore(startBtn, toggleBtn);
-      }
-      if (pauseBtn) {
-        pauseBtn.style.cssText = btnStyle;
-        pauseBtn.className = "";
-        headerActions.insertBefore(pauseBtn, toggleBtn);
-      }
-      if (resetBtn) {
-        resetBtn.style.cssText = btnStyle;
-        resetBtn.className = "";
-        headerActions.insertBefore(resetBtn, toggleBtn);
-      }
-    }
-    // --------- Move Auto Farmer Action Buttons -------------- //
+        if (headerActions) {
+            if (startBtn) {
+                startBtn.style.cssText = btnStyle;
+                startBtn.className = "";
+                headerActions.insertBefore(startBtn, toggleBtn);
+            }
+            if (pauseBtn) {
+                pauseBtn.style.cssText = btnStyle;
+                pauseBtn.className = "";
+                headerActions.insertBefore(pauseBtn, toggleBtn);
+            }
+            if (resetBtn) {
+                resetBtn.style.cssText = btnStyle;
+                resetBtn.className = "";
+                headerActions.insertBefore(resetBtn, toggleBtn);
+            }
+        }
+        // --------- Move Auto Farmer Action Buttons -------------- //
 
-    // ------------ Add Join Buttons For Bosses --------------- //
-    const autoSummonCards = document.querySelectorAll(
-      '.auto-summon-card[data-alive="1"]',
-    );
-
-    autoSummonCards.forEach((card) => {
-      const nameEl = card.querySelector(".auto-summon-name");
-      if (!nameEl) return;
-
-      const monsterName = nameEl.textContent.trim().toLowerCase();
-
-      // Find matching monster card by data-name
-      const monsterCard = document.querySelector(
-        `.monster-card[data-name="${monsterName}"]`,
-      );
-
-      if (!monsterCard) return;
-
-      const monsterId = monsterCard.dataset.monsterId;
-      if (!monsterId) return;
-
-      const statusEl = card.querySelector(".auto-summon-status.alive");
-      if (!statusEl) return;
-
-      // Prevent duplicate buttons
-      if (statusEl.querySelector(".auto-join-btn")) return;
-
-      // Create Join button
-      const joinBtn = document.createElement("a");
-      joinBtn.className = "auto-join-btn join-btn";
-      joinBtn.href = `battle.php?id=${monsterId}`;
-      joinBtn.textContent = "Join";
-      joinBtn.style.marginLeft = "10px";
-      joinBtn.style.marginTop = "0px";
-      joinBtn.style.textDecoration = "none";
-      joinBtn.style.padding = "3px 15px";
-      joinBtn.style.background = "#1a9d73";
-
-      statusEl.appendChild(joinBtn);
-    });
-    // ------------ Add Join Buttons For Bosses --------------- //
-  }
-  // -------------------------- Wave X Page ---------------------------- //
-
-  // ---------------------------- Merchant ----------------------------- //
-
-  const { container: enableBuyMaxButtonsToggle } = createSettingsInput({
-    key: "ui-improvements:enableBuyAllButtons",
-    label: "Buy {Max} Buttons",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
-
-  addSettingsGroup(
-    "merchant-page",
-    "Merchant",
-    "Settings related to the merchant page.",
-    [enableBuyMaxButtonsToggle],
-  );
-
-  const enableBuyAllButons = Storage.get(
-    "ui-improvements:enableBuyAllButtons",
-    true,
-  );
-
-  function getGoldBalance() {
-    const el = document.getElementById("goldBalance");
-    return el ? parseInt(el.textContent.replace(/[^\d]/g, ""), 10) || 0 : 0;
-  }
-
-  function injectBuyX() {
-    const goldBalance = getGoldBalance();
-
-    document.querySelectorAll(".card").forEach((card) => {
-      if ((card.dataset.currency || "").toLowerCase() !== "gold") return;
-
-      const price = parseInt(card.dataset.price || "0", 10);
-      const maxQ = parseInt(card.dataset.maxq || "0", 10);
-      const bought = parseInt(card.dataset.bought || "0", 10);
-      const merchId = parseInt(card.dataset.merchId, 10);
-      const remaining = maxQ - bought;
-
-      if (!price || !maxQ || remaining <= 1) {
-        return;
-      }
-
-      const affordable = Math.floor(goldBalance / price);
-      const buyX = Math.min(remaining, affordable);
-
-      const actions = card.querySelector(".actions");
-      const buyBtn = actions?.querySelector(".buy-btn");
-      if (!actions || !buyBtn) return;
-
-      if (actions.querySelector(".buy-x-btn")) return;
-
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "btn buy-x-btn";
-      btn.textContent = `Buy ${buyX}`;
-      btn.disabled = buyX <= 0;
-
-      btn.addEventListener("click", async () => {
-        if (btn.disabled) return;
-
-        const itemName =
-          card.querySelector(".name")?.textContent?.trim() || "this item";
-
-        const totalCost = price * buyX;
-
-        const confirmed = window.confirm(
-          `Confirm Purchase\n\nBuy ${buyX} × ${itemName}\nCost: ${totalCost.toLocaleString()} Gold`,
+        // ------------ Add Join Buttons For Bosses --------------- //
+        const autoSummonCards = document.querySelectorAll(
+            '.auto-summon-card[data-alive="1"]',
         );
 
-        if (!confirmed) return;
+        autoSummonCards.forEach((card) => {
+            const nameEl = card.querySelector(".auto-summon-name");
+            if (!nameEl) return;
 
-        btn.disabled = true;
+            const monsterName = nameEl.textContent.trim().toLowerCase();
 
-        try {
-          const params = new URLSearchParams();
-          params.set("merch_id", merchId.toString());
-          params.set("qty", buyX.toString());
+            // Find matching monster card by data-name
+            const monsterCard = document.querySelector(
+                `.monster-card[data-name="${monsterName}"]`,
+            );
 
-          const res = await fetch("merchant_buy.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: params.toString(),
-          });
+            if (!monsterCard) return;
 
-          const data = await res.json().catch(() => ({}));
+            const monsterId = monsterCard.dataset.monsterId;
+            if (!monsterId) return;
 
-          if ((data.status || "").trim() === "success") {
-            adjustTopbarCurrency("gold", -(price * buyX));
+            const statusEl = card.querySelector(".auto-summon-status.alive");
+            if (!statusEl) return;
 
-            const infoRow = card.querySelector(".muted");
-            if (typeof data.remaining === "number") {
-              const newBought = maxQ - data.remaining;
-              if (infoRow) {
-                infoRow.textContent = `Bought: ${newBought} / ${maxQ}`;
-              }
-              card.dataset.bought = String(newBought);
-              btn.disabled = data.remaining <= 0;
-            } else {
-              const newBought = Math.min(maxQ, bought + buyX);
-              if (infoRow) {
-                infoRow.textContent = `Bought: ${newBought} / ${maxQ}`;
-              }
-              card.dataset.bought = String(newBought);
-              btn.disabled = newBought >= maxQ;
+            // Prevent duplicate buttons
+            if (statusEl.querySelector(".auto-join-btn")) return;
+
+            // Create Join button
+            const joinBtn = document.createElement("a");
+            joinBtn.className = "auto-join-btn join-btn";
+            joinBtn.href = `battle.php?id=${monsterId}`;
+            joinBtn.textContent = "Join";
+            joinBtn.style.marginLeft = "10px";
+            joinBtn.style.marginTop = "0px";
+            joinBtn.style.textDecoration = "none";
+            joinBtn.style.padding = "3px 15px";
+            joinBtn.style.background = "#1a9d73";
+
+            statusEl.appendChild(joinBtn);
+        });
+        // ------------ Add Join Buttons For Bosses --------------- //
+    }
+    // -------------------------- Wave X Page ---------------------------- //
+
+    // ---------------------------- Merchant ----------------------------- //
+
+    const { container: enableBuyMaxButtonsToggle } = createSettingsInput({
+        key: "ui-improvements:enableBuyAllButtons",
+        label: "Buy {Max} Buttons",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
+
+    addSettingsGroup(
+        "merchant-page",
+        "Merchant",
+        "Settings related to the merchant page.",
+        [enableBuyMaxButtonsToggle],
+    );
+
+    const enableBuyAllButons = Storage.get(
+        "ui-improvements:enableBuyAllButtons",
+        true,
+    );
+
+    function getGoldBalance() {
+        const el = document.getElementById("goldBalance");
+        return el ? parseInt(el.textContent.replace(/[^\d]/g, ""), 10) || 0 : 0;
+    }
+
+    function injectBuyX() {
+        const goldBalance = getGoldBalance();
+
+        document.querySelectorAll(".card").forEach((card) => {
+            if ((card.dataset.currency || "").toLowerCase() !== "gold") return;
+
+            const price = parseInt(card.dataset.price || "0", 10);
+            const maxQ = parseInt(card.dataset.maxq || "0", 10);
+            const bought = parseInt(card.dataset.bought || "0", 10);
+            const merchId = parseInt(card.dataset.merchId, 10);
+            const remaining = maxQ - bought;
+
+            if (!price || !maxQ || remaining <= 1) {
+                return;
             }
 
-            showPurchaseModal((data.message || "Purchased!").trim(), "success");
-          } else {
-            const msg = (data.message || "Purchase failed.").trim();
-            const warn = /not enough (gold|gems)/i.test(msg);
-            showPurchaseModal(msg, warn ? "warn" : "error");
-            btn.disabled = false;
-          }
-        } catch {
-          showPurchaseModal("Server error. Please try again.", "error");
-          btn.disabled = false;
-        }
-      });
+            const affordable = Math.floor(goldBalance / price);
+            const buyX = Math.min(remaining, affordable);
 
-      actions.appendChild(btn);
-    });
-  }
+            const actions = card.querySelector(".actions");
+            const buyBtn = actions?.querySelector(".buy-btn");
+            if (!actions || !buyBtn) return;
 
-  if (enableBuyAllButons) {
-    injectBuyX();
-  }
+            if (actions.querySelector(".buy-x-btn")) return;
 
-  // ---------------------------- Merchant ----------------------------- //
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn buy-x-btn";
+            btn.textContent = `Buy ${buyX}`;
+            btn.disabled = buyX <= 0;
 
-  // ------------------------- Battle Side Bar ------------------------- //
+            btn.addEventListener("click", async () => {
+                if (btn.disabled) return;
 
-  GM_addStyle(`
+                const itemName =
+                      card.querySelector(".name")?.textContent?.trim() || "this item";
+
+                const totalCost = price * buyX;
+
+                const confirmed = window.confirm(
+                    `Confirm Purchase\n\nBuy ${buyX} × ${itemName}\nCost: ${totalCost.toLocaleString()} Gold`,
+                );
+
+                if (!confirmed) return;
+
+                btn.disabled = true;
+
+                try {
+                    const params = new URLSearchParams();
+                    params.set("merch_id", merchId.toString());
+                    params.set("qty", buyX.toString());
+
+                    const res = await fetch("merchant_buy.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: params.toString(),
+                    });
+
+                    const data = await res.json().catch(() => ({}));
+
+                    if ((data.status || "").trim() === "success") {
+                        adjustTopbarCurrency("gold", -(price * buyX));
+
+                        const infoRow = card.querySelector(".muted");
+                        if (typeof data.remaining === "number") {
+                            const newBought = maxQ - data.remaining;
+                            if (infoRow) {
+                                infoRow.textContent = `Bought: ${newBought} / ${maxQ}`;
+                            }
+                            card.dataset.bought = String(newBought);
+                            btn.disabled = data.remaining <= 0;
+                        } else {
+                            const newBought = Math.min(maxQ, bought + buyX);
+                            if (infoRow) {
+                                infoRow.textContent = `Bought: ${newBought} / ${maxQ}`;
+                            }
+                            card.dataset.bought = String(newBought);
+                            btn.disabled = newBought >= maxQ;
+                        }
+
+                        showPurchaseModal((data.message || "Purchased!").trim(), "success");
+                    } else {
+                        const msg = (data.message || "Purchase failed.").trim();
+                        const warn = /not enough (gold|gems)/i.test(msg);
+                        showPurchaseModal(msg, warn ? "warn" : "error");
+                        btn.disabled = false;
+                    }
+                } catch {
+                    showPurchaseModal("Server error. Please try again.", "error");
+                    btn.disabled = false;
+                }
+            });
+
+            actions.appendChild(btn);
+        });
+    }
+
+    if (enableBuyAllButons) {
+        injectBuyX();
+    }
+
+    // ---------------------------- Merchant ----------------------------- //
+
+    // ------------------------- Battle Side Bar ------------------------- //
+
+    GM_addStyle(`
     #battleDrawer {
       overflow: auto;
       padding-bottom: 150px !important
     }
   `);
 
-  (function sideBar() {
-    const drawer = document.getElementById("battleDrawer");
-    if (!drawer) return;
-    // Make sidebar scrollable. (GM_addStyle didn't work for some reason)
-    drawer.style.overflow = "auto";
-    drawer.style.setProperty("padding-bottom", "150px", "important");
-    // add padding to last element so it's not below the chat button
-    const lastElement = drawer.lastElementChild;
-    lastElement.style.setProperty("margin-bottom", "100px", "important");
-  })();
-  // ------------------------- Battle Side Bar ------------------------- //
+    (function sideBar() {
+        const drawer = document.getElementById("battleDrawer");
+        if (!drawer) return;
+        // Make sidebar scrollable. (GM_addStyle didn't work for some reason)
+        drawer.style.overflow = "auto";
+        drawer.style.setProperty("padding-bottom", "150px", "important");
+        // add padding to last element so it's not below the chat button
+        const lastElement = drawer.lastElementChild;
+        lastElement.style.setProperty("margin-bottom", "100px", "important");
+    })();
+    // ------------------------- Battle Side Bar ------------------------- //
 
-  // ----------------------- Guild Member's List ----------------------- //
-  const { container: enableGuildMemberListSortingToggle } = createSettingsInput(
-    {
-      key: "ui-improvements:enableGuildMemberListSorting",
-      label: "Guild Members Sorting",
-      defaultValue: true,
-      type: "checkbox",
-      inputProps: { slider: true },
-    },
-  );
-
-  addSettingsGroup(
-    "guild-management",
-    "Guild Management",
-    "Settings related to the guild pages.",
-    [enableGuildMemberListSortingToggle],
-  );
-
-  const enableGuildMemberListSorting = Storage.get(
-    "ui-improvements:enableGuildMemberListSorting",
-    true,
-  );
-
-  if (
-    window.location.href.includes("/guild_members.php") &&
-    enableGuildMemberListSorting
-  ) {
-    const table = document.querySelector("table");
-    if (!table) return;
-
-    const tbody = table.querySelector("tbody");
-    const headers = Array.from(table.querySelectorAll("th"));
-
-    // Custom role priority
-    const roleOrder = {
-      leader: 1,
-      vice: 2,
-      member: 3,
-    };
-
-    const getCellValue = (tr, idx) => tr.children[idx].innerText.trim();
-
-    const parseValue = (value, colIndex) => {
-      // Role column (index 1)
-      if (colIndex === 1) {
-        return roleOrder[value.toLowerCase()] ?? 99;
-      }
-
-      // Numbers (remove commas)
-      const num = value.replace(/,/g, "");
-      if (!isNaN(num) && num !== "") return Number(num);
-
-      // Dates
-      const date = Date.parse(value);
-      if (!isNaN(date)) return new Date(date);
-
-      // Text
-      return value.toLowerCase();
-    };
-
-    const clearCarets = () => {
-      headers.forEach((th) => {
-        th.innerHTML = th.innerHTML.replace(/\s*[▲▼]$/, "");
-      });
-    };
-
-    const sortTable = (colIndex, asc, showCaret = true) => {
-      const rows = Array.from(tbody.querySelectorAll("tr"));
-
-      rows.sort((a, b) => {
-        const A = parseValue(getCellValue(a, colIndex), colIndex);
-        const B = parseValue(getCellValue(b, colIndex), colIndex);
-
-        if (A > B) return asc ? 1 : -1;
-        if (A < B) return asc ? -1 : 1;
-        return 0;
-      });
-
-      if (showCaret) {
-        clearCarets();
-        headers[colIndex].innerHTML =
-          headers[colIndex].innerText + (asc ? " ▲" : " ▼");
-      }
-
-      rows.forEach((tr) => tbody.appendChild(tr));
-    };
-
-    // Enable click sorting on all headers
-    headers.forEach((th, index) => {
-      let asc = true;
-      th.style.cursor = "pointer";
-      th.title = "Click to sort";
-
-      th.addEventListener("click", () => {
-        sortTable(index, asc);
-        asc = !asc;
-      });
-    });
-
-    // 🔥 DEFAULT SORT: Role → Leader, Vice, Member (ASC)
-    sortTable(1, true, true);
-  }
-
-  // ----------------------- Guild Member's List ----------------------- //
-
-  // ------------------------- Dungeon Loot All ------------------------ //
-
-  const { container: useDungeonLootToggle, input: useDungeonLootInput } =
-    createSettingsInput({
-      key: "ui-improvements:useDungeonLoot",
-      label: "Enable Bulk Loot",
-      defaultValue: true,
-      type: "checkbox",
-      inputProps: { slider: true },
-    });
-
-  const { container: stopLootingOnLevelUpToggle } = createSettingsInput({
-    key: "ui-improvements:stopLootingOnLevelUp",
-    label: "Stop Looting On Level",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
-
-  let showLootOnLevel = useDungeonLootInput.checked;
-  stopLootingOnLevelUpToggle.style.display = showLootOnLevel ? "flex" : "none";
-
-  useDungeonLootInput.addEventListener("change", () => {
-    console.log("changed!");
-    showLootOnLevel = useDungeonLootInput.checked;
-    stopLootingOnLevelUpToggle.style.display = showLootOnLevel
-      ? "flex"
-      : "none";
-  });
-
-  addSettingsGroup(
-    "dungeon",
-    "Dungeon Loot",
-    "settings for bulk dungeon looting",
-    [useDungeonLootToggle, stopLootingOnLevelUpToggle],
-  );
-
-  const useDungeonLoot = Storage.get("ui-improvements:useDungeonLoot", true);
-  const stopLootingOnLevelUp = Storage.get(
-    "ui-improvements:stopLootingOnLevelUp",
-    true,
-  );
-
-  function getUnootedMobs(doc = document) {
-    return [...doc.querySelectorAll(".mon.dead")].filter((mon) =>
-      [...mon.querySelectorAll(".pill")].some(
-        (pill) => pill.textContent.trim() === "not looted",
-      ),
+    // ----------------------- Guild Member's List ----------------------- //
+    const { container: enableGuildMemberListSortingToggle } = createSettingsInput(
+        {
+            key: "ui-improvements:enableGuildMemberListSorting",
+            label: "Guild Members Sorting",
+            defaultValue: true,
+            type: "checkbox",
+            inputProps: { slider: true },
+        },
     );
-  }
 
-  async function lootAllMonsters(instanceId, stopIfLevelUp = true) {
-    const pins = document.querySelectorAll(".mapwrap .pin:not(.locked)");
-    const locationUrls = Array.from(pins).map((pin) => pin.href);
+    addSettingsGroup(
+        "guild-management",
+        "Guild Management",
+        "Settings related to the guild pages.",
+        [enableGuildMemberListSortingToggle],
+    );
 
-    let mobsToLoot = [];
-    const expToLevel = getRequiredExperienceToLevel();
-    for (const url of locationUrls) {
-      const locationPage = await internalFetch(url);
-      const unlootedMobs = getUnootedMobs(locationPage);
-      mobsToLoot.push(...unlootedMobs);
+    const enableGuildMemberListSorting = Storage.get(
+        "ui-improvements:enableGuildMemberListSorting",
+        true,
+    );
+
+    if (
+        window.location.href.includes("/guild_members.php") &&
+        enableGuildMemberListSorting
+    ) {
+        const table = document.querySelector("table");
+        if (!table) return;
+
+        const tbody = table.querySelector("tbody");
+        const headers = Array.from(table.querySelectorAll("th"));
+
+        // Custom role priority
+        const roleOrder = {
+            leader: 1,
+            vice: 2,
+            member: 3,
+        };
+
+        const getCellValue = (tr, idx) => tr.children[idx].innerText.trim();
+
+        const parseValue = (value, colIndex) => {
+            // Role column (index 1)
+            if (colIndex === 1) {
+                return roleOrder[value.toLowerCase()] ?? 99;
+            }
+
+            // Numbers (remove commas)
+            const num = value.replace(/,/g, "");
+            if (!isNaN(num) && num !== "") return Number(num);
+
+            // Dates
+            const date = Date.parse(value);
+            if (!isNaN(date)) return new Date(date);
+
+            // Text
+            return value.toLowerCase();
+        };
+
+        const clearCarets = () => {
+            headers.forEach((th) => {
+                th.innerHTML = th.innerHTML.replace(/\s*[▲▼]$/, "");
+            });
+        };
+
+        const sortTable = (colIndex, asc, showCaret = true) => {
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+
+            rows.sort((a, b) => {
+                const A = parseValue(getCellValue(a, colIndex), colIndex);
+                const B = parseValue(getCellValue(b, colIndex), colIndex);
+
+                if (A > B) return asc ? 1 : -1;
+                if (A < B) return asc ? -1 : 1;
+                return 0;
+            });
+
+            if (showCaret) {
+                clearCarets();
+                headers[colIndex].innerHTML =
+                    headers[colIndex].innerText + (asc ? " ▲" : " ▼");
+            }
+
+            rows.forEach((tr) => tbody.appendChild(tr));
+        };
+
+        // Enable click sorting on all headers
+        headers.forEach((th, index) => {
+            let asc = true;
+            th.style.cursor = "pointer";
+            th.title = "Click to sort";
+
+            th.addEventListener("click", () => {
+                sortTable(index, asc);
+                asc = !asc;
+            });
+        });
+
+        // 🔥 DEFAULT SORT: Role → Leader, Vice, Member (ASC)
+        sortTable(1, true, true);
     }
 
-    console.log(`Looting ${mobsToLoot.length} monsters...`);
-    const allLootData = {
-      leveledUp: false,
-      numMobsToLoot: mobsToLoot.length,
-      processed: 0,
-      success: 0,
-      fail: 0,
-      items: [],
-      rewards: { exp: 0, gold: 0, damage_dealt: 0 },
-    };
-    for (const mon of mobsToLoot) {
-      // Getting monster id from the href of the view button (eww)
-      const viewBtn = mon.querySelector('a[href*="battle.php"]');
-      if (!viewBtn) continue;
-      const params = new URLSearchParams(viewBtn.href.split("?")[1]);
-      const monsterId = params.get("dgmid");
-      try {
-        const lootData = await lootMonster(monsterId, instanceId);
-        if (Array.isArray(lootData.items)) {
-          allLootData.items.push(...lootData.items);
+    // ----------------------- Guild Member's List ----------------------- //
+
+    // ------------------------- Dungeon Loot All ------------------------ //
+
+    const { container: useDungeonLootToggle, input: useDungeonLootInput } =
+          createSettingsInput({
+              key: "ui-improvements:useDungeonLoot",
+              label: "Enable Bulk Loot",
+              defaultValue: true,
+              type: "checkbox",
+              inputProps: { slider: true },
+          });
+
+    const { container: stopLootingOnLevelUpToggle } = createSettingsInput({
+        key: "ui-improvements:stopLootingOnLevelUp",
+        label: "Stop Looting On Level",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
+
+    let showLootOnLevel = useDungeonLootInput.checked;
+    stopLootingOnLevelUpToggle.style.display = showLootOnLevel ? "flex" : "none";
+
+    useDungeonLootInput.addEventListener("change", () => {
+        console.log("changed!");
+        showLootOnLevel = useDungeonLootInput.checked;
+        stopLootingOnLevelUpToggle.style.display = showLootOnLevel
+            ? "flex"
+        : "none";
+    });
+
+    addSettingsGroup(
+        "dungeon",
+        "Dungeon Loot",
+        "settings for bulk dungeon looting",
+        [useDungeonLootToggle, stopLootingOnLevelUpToggle],
+    );
+
+    const useDungeonLoot = Storage.get("ui-improvements:useDungeonLoot", true);
+    const stopLootingOnLevelUp = Storage.get(
+        "ui-improvements:stopLootingOnLevelUp",
+        true,
+    );
+
+    function getUnootedMobs(doc = document) {
+        return [...doc.querySelectorAll(".mon.dead")].filter((mon) =>
+                                                             [...mon.querySelectorAll(".pill")].some(
+            (pill) => pill.textContent.trim() === "not looted",
+        ),
+                                                            );
+    }
+
+    async function lootAllMonsters(instanceId, stopIfLevelUp = true) {
+        const pins = document.querySelectorAll(".mapwrap .pin:not(.locked)");
+        const locationUrls = Array.from(pins).map((pin) => pin.href);
+
+        let mobsToLoot = [];
+        const expToLevel = getRequiredExperienceToLevel();
+        for (const url of locationUrls) {
+            const locationPage = await internalFetch(url);
+            const unlootedMobs = getUnootedMobs(locationPage);
+            mobsToLoot.push(...unlootedMobs);
         }
+
+        console.log(`Looting ${mobsToLoot.length} monsters...`);
+        const allLootData = {
+            leveledUp: false,
+            numMobsToLoot: mobsToLoot.length,
+            processed: 0,
+            success: 0,
+            fail: 0,
+            items: [],
+            rewards: { exp: 0, gold: 0, damage_dealt: 0 },
+        };
+        for (const mon of mobsToLoot) {
+            // Getting monster id from the href of the view button (eww)
+            const viewBtn = mon.querySelector('a[href*="battle.php"]');
+            if (!viewBtn) continue;
+            const params = new URLSearchParams(viewBtn.href.split("?")[1]);
+            const monsterId = params.get("dgmid");
+            try {
+                const lootData = await lootMonster(monsterId, instanceId);
+                if (Array.isArray(lootData.items)) {
+                    allLootData.items.push(...lootData.items);
+                }
+                const rewards = lootData.rewards;
+                if (
+                    !rewards ||
+                    !("exp" in rewards) ||
+                    !("gold" in rewards) ||
+                    !("damage_dealt" in rewards)
+                ) {
+                    throw new Error("no rewards object");
+                }
+                allLootData.rewards.exp += lootData.rewards.exp;
+                allLootData.rewards.gold += lootData.rewards.gold;
+                allLootData.rewards.damage_dealt += lootData.rewards.damage_dealt;
+                allLootData.success += 1;
+            } catch (e) {
+                console.error("Failed to loot monster:", monsterId, e);
+                allLootData.fail += 1;
+            }
+
+            allLootData.processed += 1;
+
+            // Check if leveled up
+            if (allLootData.rewards.exp >= expToLevel) {
+                allLootData.leveledUp = true;
+                if (stopIfLevelUp) {
+                    break;
+                }
+            }
+        }
+
+        showNotification("All lootable monsters processed!");
+        showLootModal(allLootData);
+    }
+
+    function showLootModal(lootData) {
+        const lootModal = initLootModal();
+        const items = dedupeItems(lootData.items);
         const rewards = lootData.rewards;
-        if (
-          !rewards ||
-          !("exp" in rewards) ||
-          !("gold" in rewards) ||
-          !("damage_dealt" in rewards)
-        ) {
-          throw new Error("no rewards object");
-        }
-        allLootData.rewards.exp += lootData.rewards.exp;
-        allLootData.rewards.gold += lootData.rewards.gold;
-        allLootData.rewards.damage_dealt += lootData.rewards.damage_dealt;
-        allLootData.success += 1;
-      } catch (e) {
-        console.error("Failed to loot monster:", monsterId, e);
-        allLootData.fail += 1;
-      }
+        const noteContainer = lootModal.querySelector("#lootNote");
+        const itemsContainer = lootModal.querySelector("#lootItems");
 
-      allLootData.processed += 1;
+        const chip = document.createElement("div");
+        chip.className = "chip";
 
-      // Check if leveled up
-      if (allLootData.rewards.exp >= expToLevel) {
-        allLootData.leveledUp = true;
-        if (stopIfLevelUp) {
-          break;
+        if (lootData.leveledUp) {
+            const levelUpChip = chip.cloneNode();
+            levelUpChip.textContent = `Leveled Up!`;
+            noteContainer.appendChild(levelUpChip);
         }
-      }
+
+        const processedChip = chip.cloneNode();
+        processedChip.textContent = `Processed: ${lootData.processed.toLocaleString()}/${lootData.numMobsToLoot.toLocaleString()}`;
+        noteContainer.appendChild(processedChip);
+
+        const successChip = chip.cloneNode();
+        successChip.textContent = `Success: ${lootData.success.toLocaleString()}`;
+        noteContainer.appendChild(successChip);
+
+        const failedChip = chip.cloneNode();
+        failedChip.textContent = `Fail: ${lootData.fail.toLocaleString()}`;
+        noteContainer.appendChild(failedChip);
+
+        const expChip = chip.cloneNode();
+        expChip.textContent = `Exp: ${rewards.exp.toLocaleString()}`;
+        noteContainer.appendChild(expChip);
+
+        const goldChip = chip.cloneNode();
+        goldChip.textContent = `Gold: ${rewards.gold.toLocaleString()}`;
+        noteContainer.appendChild(goldChip);
+
+        const dmgChip = chip.cloneNode();
+        dmgChip.textContent = `Damage: ${rewards.damage_dealt.toLocaleString()}`;
+        noteContainer.appendChild(dmgChip);
+
+        const itemsChip = chip.cloneNode();
+        itemsChip.textContent = `Items: ${lootData.items.length.toLocaleString()}`;
+        noteContainer.appendChild(itemsChip);
+
+        if (items.length === 0) {
+            const noItems = document.createElement("div");
+            noItems.className = "muted";
+            noItems.style.padding = "6px 0";
+            noItems.textContent = "No items this time.";
+            itemsContainer.appendChild(noItems);
+        } else {
+            for (const item of items) {
+                const itemDiv = document.createElement("div");
+                itemDiv.className = "blm-item";
+
+                // Quantity badge (only if > 1)
+                if (item.QUANTITY_DROPPED) {
+                    const qty = document.createElement("div");
+                    qty.className = "blm-item-qty";
+                    qty.textContent = `x${item.QUANTITY_DROPPED}`;
+                    itemDiv.appendChild(qty);
+                }
+
+                const img = document.createElement("img");
+                img.src = item.IMAGE_URL;
+                img.alt = item.NAME;
+
+                const name = document.createElement("small");
+                name.textContent = item.NAME;
+
+                itemDiv.appendChild(img);
+                itemDiv.appendChild(name);
+
+                if (item.TIER) {
+                    const tier = document.createElement("small");
+                    tier.className = "muted";
+                    tier.textContent = item.TIER;
+                    itemDiv.appendChild(tier);
+                }
+
+                itemsContainer.appendChild(itemDiv);
+            }
+        }
     }
 
-    showNotification("All lootable monsters processed!");
-    showLootModal(allLootData);
-  }
-
-  function showLootModal(lootData) {
-    const lootModal = initLootModal();
-    const items = dedupeItems(lootData.items);
-    const rewards = lootData.rewards;
-    const noteContainer = lootModal.querySelector("#lootNote");
-    const itemsContainer = lootModal.querySelector("#lootItems");
-
-    const chip = document.createElement("div");
-    chip.className = "chip";
-
-    if (lootData.leveledUp) {
-      const levelUpChip = chip.cloneNode();
-      levelUpChip.textContent = `Leveled Up!`;
-      noteContainer.appendChild(levelUpChip);
-    }
-
-    const processedChip = chip.cloneNode();
-    processedChip.textContent = `Processed: ${lootData.processed.toLocaleString()}/${lootData.numMobsToLoot.toLocaleString()}`;
-    noteContainer.appendChild(processedChip);
-
-    const successChip = chip.cloneNode();
-    successChip.textContent = `Success: ${lootData.success.toLocaleString()}`;
-    noteContainer.appendChild(successChip);
-
-    const failedChip = chip.cloneNode();
-    failedChip.textContent = `Fail: ${lootData.fail.toLocaleString()}`;
-    noteContainer.appendChild(failedChip);
-
-    const expChip = chip.cloneNode();
-    expChip.textContent = `Exp: ${rewards.exp.toLocaleString()}`;
-    noteContainer.appendChild(expChip);
-
-    const goldChip = chip.cloneNode();
-    goldChip.textContent = `Gold: ${rewards.gold.toLocaleString()}`;
-    noteContainer.appendChild(goldChip);
-
-    const dmgChip = chip.cloneNode();
-    dmgChip.textContent = `Damage: ${rewards.damage_dealt.toLocaleString()}`;
-    noteContainer.appendChild(dmgChip);
-
-    const itemsChip = chip.cloneNode();
-    itemsChip.textContent = `Items: ${lootData.items.length.toLocaleString()}`;
-    noteContainer.appendChild(itemsChip);
-
-    if (items.length === 0) {
-      const noItems = document.createElement("div");
-      noItems.className = "muted";
-      noItems.style.padding = "6px 0";
-      noItems.textContent = "No items this time.";
-      itemsContainer.appendChild(noItems);
-    } else {
-      for (const item of items) {
-        const itemDiv = document.createElement("div");
-        itemDiv.className = "blm-item";
-
-        // Quantity badge (only if > 1)
-        if (item.QUANTITY_DROPPED) {
-          const qty = document.createElement("div");
-          qty.className = "blm-item-qty";
-          qty.textContent = `x${item.QUANTITY_DROPPED}`;
-          itemDiv.appendChild(qty);
-        }
-
-        const img = document.createElement("img");
-        img.src = item.IMAGE_URL;
-        img.alt = item.NAME;
-
-        const name = document.createElement("small");
-        name.textContent = item.NAME;
-
-        itemDiv.appendChild(img);
-        itemDiv.appendChild(name);
-
-        if (item.TIER) {
-          const tier = document.createElement("small");
-          tier.className = "muted";
-          tier.textContent = item.TIER;
-          itemDiv.appendChild(tier);
-        }
-
-        itemsContainer.appendChild(itemDiv);
-      }
-    }
-  }
-
-  function initLootModal() {
-    console.info("veyra-hud: loot modal init");
-    let lootModal;
-    const lootModals = document.getElementsByClassName(
-      "veyra-hud-custom-loot-modal",
-    );
-    const exists = lootModals?.length > 0;
-    if (exists) {
-      return lootModals[0];
-    } else {
-      console.info("veyra-hud: injecting loot modal");
-      // =======================
-      // Inject CSS
-      // =======================
-      GM_addStyle(`
+    function initLootModal() {
+        console.info("veyra-hud: loot modal init");
+        let lootModal;
+        const lootModals = document.getElementsByClassName(
+            "veyra-hud-custom-loot-modal",
+        );
+        const exists = lootModals?.length > 0;
+        if (exists) {
+            return lootModals[0];
+        } else {
+            console.info("veyra-hud: injecting loot modal");
+            // =======================
+            // Inject CSS
+            // =======================
+            GM_addStyle(`
         #lootModal {
           display: none;
           position: fixed;
@@ -3264,7 +3579,7 @@ v2.2.2:
         .blm-item img{width:64px;height:64px;object-fit:cover;border-radius:8px;display:block;margin:0 auto 6px}
         .blm-item small{display:block;line-height:1.2}
 
-        
+
         .blm-item-qty {
           position: absolute;
           top: 4px;
@@ -3281,299 +3596,299 @@ v2.2.2:
         }
       `);
 
-      // =======================
-      // Create Modal Structure
-      // =======================
-      const lootModal = document.createElement("div");
-      lootModal.id = "lootModal";
-      lootModal.classList.add("veyra-hud-custom-loot-modal");
+            // =======================
+            // Create Modal Structure
+            // =======================
+            const lootModal = document.createElement("div");
+            lootModal.id = "lootModal";
+            lootModal.classList.add("veyra-hud-custom-loot-modal");
 
-      // Content container
-      const content = document.createElement("div");
-      content.className = "loot-content";
+            // Content container
+            const content = document.createElement("div");
+            content.className = "loot-content";
 
-      // Title
-      const title = document.createElement("h2");
-      title.textContent = "🎁 Loot Gained";
+            // Title
+            const title = document.createElement("h2");
+            title.textContent = "🎁 Loot Gained";
 
-      // Loot note
-      const lootNote = document.createElement("div");
-      lootNote.id = "lootNote";
-      lootNote.className = "muted";
+            // Loot note
+            const lootNote = document.createElement("div");
+            lootNote.id = "lootNote";
+            lootNote.className = "muted";
 
-      // Loot items container
-      const lootItems = document.createElement("div");
-      lootItems.id = "lootItems";
+            // Loot items container
+            const lootItems = document.createElement("div");
+            lootItems.id = "lootItems";
 
-      // Spacer
-      const spacer = document.createElement("br");
+            // Spacer
+            const spacer = document.createElement("br");
 
-      // Close button
-      const closeButton = document.createElement("button");
-      closeButton.textContent = "Close";
-      closeButton.className = "btn-ghost";
-      closeButton.addEventListener("click", () => {
-        lootModal.style.display = "none";
-        refreshPage();
-      });
+            // Close button
+            const closeButton = document.createElement("button");
+            closeButton.textContent = "Close";
+            closeButton.className = "btn-ghost";
+            closeButton.addEventListener("click", () => {
+                lootModal.style.display = "none";
+                refreshPage();
+            });
 
-      // =======================
-      // Assemble DOM
-      // =======================
-      content.appendChild(title);
-      content.appendChild(lootNote);
-      content.appendChild(lootItems);
-      content.appendChild(spacer);
-      content.appendChild(closeButton);
+            // =======================
+            // Assemble DOM
+            // =======================
+            content.appendChild(title);
+            content.appendChild(lootNote);
+            content.appendChild(lootItems);
+            content.appendChild(spacer);
+            content.appendChild(closeButton);
 
-      lootModal.appendChild(content);
-      document.body.appendChild(lootModal);
+            lootModal.appendChild(content);
+            document.body.appendChild(lootModal);
 
-      // =======================
-      // Helper Functions
-      // =======================
-      window.showLootModal = () => {
-        lootModal.style.display = "flex";
-      };
+            // =======================
+            // Helper Functions
+            // =======================
+            window.showLootModal = () => {
+                lootModal.style.display = "flex";
+            };
 
-      window.hideLootModal = () => {
-        lootModal.style.display = "none";
-      };
-      return lootModal;
+            window.hideLootModal = () => {
+                lootModal.style.display = "none";
+            };
+            return lootModal;
+        }
     }
-  }
 
-  function getHealUserId() {
-    const btn = document.getElementById("healBtn");
-    if (!btn) return null;
+    function getHealUserId() {
+        const btn = document.getElementById("healBtn");
+        if (!btn) return null;
 
-    const onclick = btn.getAttribute("onclick");
-    if (!onclick) return null;
+        const onclick = btn.getAttribute("onclick");
+        if (!onclick) return null;
 
-    // Extract second numeric argument from healDungeonPlayer(a, b, ...)
-    const match = onclick.match(/healDungeonPlayer\(\s*\d+\s*,\s*(\d+)\s*,/);
-    return match ? Number(match[1]) : null;
-  }
-
-  const userId =
-    (typeof VHC_USER_ID !== "undefined" && VHC_USER_ID) ||
-    (typeof USER_ID !== "undefined" && USER_ID) ||
-    getHealUserId();
-
-  async function lootMonster(monsterId, instanceId = "0") {
-    console.log("looting: ", monsterId);
-    const results = {
-      ok: true,
-      items: [],
-      rewards: { exp: 0, gold: 0, damage_dealt: 0 },
-    };
-
-    // const userId = getHealUserId();
-    if (!userId || !monsterId || !instanceId) {
-      console.warn(
-        `lootMonster: missing params! userId: ${userId}, monsterId: ${monsterId}, instanceId: ${instanceId}`,
-      );
-      return;
+        // Extract second numeric argument from healDungeonPlayer(a, b, ...)
+        const match = onclick.match(/healDungeonPlayer\(\s*\d+\s*,\s*(\d+)\s*,/);
+        return match ? Number(match[1]) : null;
     }
-    const params = new URLSearchParams();
-    params.set("user_id", String(userId));
-    params.set("monster_id", String(monsterId));
-    params.set("dgmid", String(monsterId));
-    params.set("instance_id", String(instanceId));
 
-    const lootUrl = instanceId === "0" ? "loot.php" : "dungeon_loot.php";
-    const referrer =
-      instanceId === "0"
+    const userId =
+          (typeof VHC_USER_ID !== "undefined" && VHC_USER_ID) ||
+          (typeof USER_ID !== "undefined" && USER_ID) ||
+          getHealUserId();
+
+    async function lootMonster(monsterId, instanceId = "0") {
+        console.log("looting: ", monsterId);
+        const results = {
+            ok: true,
+            items: [],
+            rewards: { exp: 0, gold: 0, damage_dealt: 0 },
+        };
+
+        // const userId = getHealUserId();
+        if (!userId || !monsterId || !instanceId) {
+            console.warn(
+                `lootMonster: missing params! userId: ${userId}, monsterId: ${monsterId}, instanceId: ${instanceId}`,
+            );
+            return;
+        }
+        const params = new URLSearchParams();
+        params.set("user_id", String(userId));
+        params.set("monster_id", String(monsterId));
+        params.set("dgmid", String(monsterId));
+        params.set("instance_id", String(instanceId));
+
+        const lootUrl = instanceId === "0" ? "loot.php" : "dungeon_loot.php";
+        const referrer =
+              instanceId === "0"
         ? `https://demonicscans.org/battle.php?id=${monsterId}`
         : `https://demonicscans.org/battle.php?dgmid=${monsterId}`;
 
-    const res = await fetch(lootUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      referrer,
-      body: params.toString(),
-    });
-
-    const ct = res.headers.get("content-type") || "";
-    const data = await res.json();
-
-    if (data.status !== "success") {
-      throw new Error("Loot Request Failed");
-    }
-
-    if (Array.isArray(data.items)) {
-      results.items.push(...data.items);
-    }
-
-    if (data.rewards) {
-      results.rewards = data.rewards;
-    }
-
-    return results;
-  }
-
-  function dedupeItems(items) {
-    const map = new Map();
-
-    for (const item of items) {
-      const id = item.ITEM_ID;
-
-      if (!map.has(id)) {
-        map.set(id, {
-          ...item,
-          QUANTITY_DROPPED: 1,
+        const res = await fetch(lootUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            referrer,
+            body: params.toString(),
         });
-      } else {
-        map.get(id).QUANTITY_DROPPED++;
-      }
-    }
 
-    return Array.from(map.values());
-  }
+        const ct = res.headers.get("content-type") || "";
+        const data = await res.json();
 
-  async function injectLootAllButton(instanceId) {
-    const lootBtn = document.createElement("div");
-    lootBtn.className = "btn";
-    lootBtn.textContent = "💰 Loot Monsters";
-
-    lootBtn.addEventListener("click", async () => {
-      lootBtn.textContent = "💰 Looting...";
-      lootBtn.setAttribute("disabled", true);
-
-      await lootAllMonsters(instanceId, stopLootingOnLevelUp);
-
-      lootBtn.textContent = "💰 Loot Monsters";
-      lootBtn.removeAttribute("disabled");
-    });
-
-    const row = document.querySelector(".row > .row");
-    row.insertBefore(lootBtn, row.children[2]);
-  }
-
-  (async function dungeonLooting() {
-    if (
-      window.location.href.includes("guild_dungeon_instance.php") &&
-      useDungeonLoot
-    ) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const id = urlParams.get("id");
-      if (id) {
-        injectLootAllButton(id);
-      }
-    }
-  })();
-
-  // ------------------------- Dungeon Loot All ------------------------ //
-
-  // ------------------------- Cube Dungeon Loot All ------------------------ //
-
-  async function lootAllCubeMonsters(instanceId, stopIfLevelUp = true) {
-    const locations = STATE.nodes
-      .filter((node) => node.is_revealed && node.linked_location_id !== 0)
-      .map((node) => node.linked_location_id);
-    let mobsToLoot = [];
-    const expToLevel = getRequiredExperienceToLevel();
-    for (const location of locations) {
-      const locationPage = await internalFetch(
-        `/guild_dungeon_location.php?instance_id=${instanceId}&location_id=${location}`,
-      );
-      const unlootedMobs = getUnootedMobs(locationPage);
-      mobsToLoot.push(...unlootedMobs);
-    }
-
-    console.log(`Looting ${mobsToLoot.length} monsters...`);
-    const allLootData = {
-      leveledUp: false,
-      numMobsToLoot: mobsToLoot.length,
-      processed: 0,
-      success: 0,
-      fail: 0,
-      items: [],
-      rewards: { exp: 0, gold: 0, damage_dealt: 0 },
-    };
-    for (const mon of mobsToLoot) {
-      // Getting monster id from the href of the view button (eww)
-      const viewBtn = mon.querySelector('a[href*="battle.php"]');
-      if (!viewBtn) continue;
-      const params = new URLSearchParams(viewBtn.href.split("?")[1]);
-      const monsterId = params.get("dgmid");
-      try {
-        const lootData = await lootMonster(monsterId, instanceId);
-        if (Array.isArray(lootData.items)) {
-          allLootData.items.push(...lootData.items);
+        if (data.status !== "success") {
+            throw new Error("Loot Request Failed");
         }
-        const rewards = lootData.rewards;
+
+        if (Array.isArray(data.items)) {
+            results.items.push(...data.items);
+        }
+
+        if (data.rewards) {
+            results.rewards = data.rewards;
+        }
+
+        return results;
+    }
+
+    function dedupeItems(items) {
+        const map = new Map();
+
+        for (const item of items) {
+            const id = item.ITEM_ID;
+
+            if (!map.has(id)) {
+                map.set(id, {
+                    ...item,
+                    QUANTITY_DROPPED: 1,
+                });
+            } else {
+                map.get(id).QUANTITY_DROPPED++;
+            }
+        }
+
+        return Array.from(map.values());
+    }
+
+    async function injectLootAllButton(instanceId) {
+        const lootBtn = document.createElement("div");
+        lootBtn.className = "btn";
+        lootBtn.textContent = "💰 Loot Monsters";
+
+        lootBtn.addEventListener("click", async () => {
+            lootBtn.textContent = "💰 Looting...";
+            lootBtn.setAttribute("disabled", true);
+
+            await lootAllMonsters(instanceId, stopLootingOnLevelUp);
+
+            lootBtn.textContent = "💰 Loot Monsters";
+            lootBtn.removeAttribute("disabled");
+        });
+
+        const row = document.querySelector(".row > .row");
+        row.insertBefore(lootBtn, row.children[2]);
+    }
+
+    (async function dungeonLooting() {
         if (
-          !rewards ||
-          !("exp" in rewards) ||
-          !("gold" in rewards) ||
-          !("damage_dealt" in rewards)
+            window.location.href.includes("guild_dungeon_instance.php") &&
+            useDungeonLoot
         ) {
-          throw new Error("no rewards object");
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get("id");
+            if (id) {
+                injectLootAllButton(id);
+            }
         }
-        allLootData.rewards.exp += lootData.rewards.exp;
-        allLootData.rewards.gold += lootData.rewards.gold;
-        allLootData.rewards.damage_dealt += lootData.rewards.damage_dealt;
-        allLootData.success += 1;
-      } catch (e) {
-        console.error("Failed to loot monster:", monsterId, e);
-        allLootData.fail += 1;
-      }
+    })();
 
-      allLootData.processed += 1;
+    // ------------------------- Dungeon Loot All ------------------------ //
 
-      // Check if leveled up
-      if (allLootData.rewards.exp >= expToLevel) {
-        allLootData.leveledUp = true;
-        if (stopIfLevelUp) {
-          break;
+    // ------------------------- Cube Dungeon Loot All ------------------------ //
+
+    async function lootAllCubeMonsters(instanceId, stopIfLevelUp = true) {
+        const locations = STATE.nodes
+        .filter((node) => node.is_revealed && node.linked_location_id !== 0)
+        .map((node) => node.linked_location_id);
+        let mobsToLoot = [];
+        const expToLevel = getRequiredExperienceToLevel();
+        for (const location of locations) {
+            const locationPage = await internalFetch(
+                `/guild_dungeon_location.php?instance_id=${instanceId}&location_id=${location}`,
+            );
+            const unlootedMobs = getUnootedMobs(locationPage);
+            mobsToLoot.push(...unlootedMobs);
         }
-      }
+
+        console.log(`Looting ${mobsToLoot.length} monsters...`);
+        const allLootData = {
+            leveledUp: false,
+            numMobsToLoot: mobsToLoot.length,
+            processed: 0,
+            success: 0,
+            fail: 0,
+            items: [],
+            rewards: { exp: 0, gold: 0, damage_dealt: 0 },
+        };
+        for (const mon of mobsToLoot) {
+            // Getting monster id from the href of the view button (eww)
+            const viewBtn = mon.querySelector('a[href*="battle.php"]');
+            if (!viewBtn) continue;
+            const params = new URLSearchParams(viewBtn.href.split("?")[1]);
+            const monsterId = params.get("dgmid");
+            try {
+                const lootData = await lootMonster(monsterId, instanceId);
+                if (Array.isArray(lootData.items)) {
+                    allLootData.items.push(...lootData.items);
+                }
+                const rewards = lootData.rewards;
+                if (
+                    !rewards ||
+                    !("exp" in rewards) ||
+                    !("gold" in rewards) ||
+                    !("damage_dealt" in rewards)
+                ) {
+                    throw new Error("no rewards object");
+                }
+                allLootData.rewards.exp += lootData.rewards.exp;
+                allLootData.rewards.gold += lootData.rewards.gold;
+                allLootData.rewards.damage_dealt += lootData.rewards.damage_dealt;
+                allLootData.success += 1;
+            } catch (e) {
+                console.error("Failed to loot monster:", monsterId, e);
+                allLootData.fail += 1;
+            }
+
+            allLootData.processed += 1;
+
+            // Check if leveled up
+            if (allLootData.rewards.exp >= expToLevel) {
+                allLootData.leveledUp = true;
+                if (stopIfLevelUp) {
+                    break;
+                }
+            }
+        }
+
+        showNotification("All lootable monsters processed!");
+        showLootModal(allLootData);
     }
 
-    showNotification("All lootable monsters processed!");
-    showLootModal(allLootData);
-  }
+    async function injectCubeLootAllButton(instanceId) {
+        const lootBtn = document.createElement("button");
+        lootBtn.className = "btn";
+        lootBtn.textContent = "Loot All";
 
-  async function injectCubeLootAllButton(instanceId) {
-    const lootBtn = document.createElement("button");
-    lootBtn.className = "btn";
-    lootBtn.textContent = "Loot All";
+        lootBtn.addEventListener("click", async () => {
+            lootBtn.textContent = "Looting...";
+            lootBtn.setAttribute("disabled", true);
 
-    lootBtn.addEventListener("click", async () => {
-      lootBtn.textContent = "Looting...";
-      lootBtn.setAttribute("disabled", true);
+            await lootAllCubeMonsters(instanceId, stopLootingOnLevelUp);
 
-      await lootAllCubeMonsters(instanceId, stopLootingOnLevelUp);
+            lootBtn.textContent = "Loot All";
+            lootBtn.removeAttribute("disabled");
+        });
 
-      lootBtn.textContent = "Loot All";
-      lootBtn.removeAttribute("disabled");
-    });
-
-    const row = document.querySelector(".stageTools");
-    row.appendChild(lootBtn);
-  }
-
-  (async function cubeDungeonLooting() {
-    if (
-      window.location.href.includes("guild_dungeon_cube.php") &&
-      useDungeonLoot
-    ) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const id = urlParams.get("instance_id");
-      if (id) {
-        injectCubeLootAllButton(id);
-      }
+        const row = document.querySelector(".stageTools");
+        row.appendChild(lootBtn);
     }
-  })();
 
-  // ------------------------- Cube Dungeon Loot All ------------------------ //
+    (async function cubeDungeonLooting() {
+        if (
+            window.location.href.includes("guild_dungeon_cube.php") &&
+            useDungeonLoot
+        ) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get("instance_id");
+            if (id) {
+                injectCubeLootAllButton(id);
+            }
+        }
+    })();
 
-  // ------------------------------- Solo PvP ------------------------------- //
+    // ------------------------- Cube Dungeon Loot All ------------------------ //
 
-  GM_addStyle(`
+    // ------------------------------- Solo PvP ------------------------------- //
+
+    GM_addStyle(`
       .my-turn {
         border: 1px solid #2ecc71;
         animation: glowPulse 1.5s infinite ease-in-out;
@@ -3609,321 +3924,321 @@ v2.2.2:
       }
   `);
 
-  const { container: useCustomSoloPvPStylesToggle } = createSettingsInput({
-    key: "ui-improvements:useCustomSoloPvPStyles",
-    label: "Solo PvP Improvements",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
+    const { container: useCustomSoloPvPStylesToggle } = createSettingsInput({
+        key: "ui-improvements:useCustomSoloPvPStyles",
+        label: "Solo PvP Improvements",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
 
-  const { container: showEnemyClassToggle } = createSettingsInput({
-    key: "ui-improvements:showEnemyClass",
-    label: "Show Enemy Class",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
+    const { container: showEnemyClassToggle } = createSettingsInput({
+        key: "ui-improvements:showEnemyClass",
+        label: "Show Enemy Class",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
 
-  const { container: showAttackCardToggle } = createSettingsInput({
-    key: "ui-improvements:showAttackCard",
-    label: "Show Attack Card",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
+    const { container: showAttackCardToggle } = createSettingsInput({
+        key: "ui-improvements:showAttackCard",
+        label: "Show Attack Card",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
 
-  const { container: showEnemyLastHitToggle } = createSettingsInput({
-    key: "ui-improvements:showEnemyLastHit",
-    label: "Show Enemy Last Hit",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
+    const { container: showEnemyLastHitToggle } = createSettingsInput({
+        key: "ui-improvements:showEnemyLastHit",
+        label: "Show Enemy Last Hit",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
 
-  const { container: showAllyLastHitToggle } = createSettingsInput({
-    key: "ui-improvements:showAllyLastHit",
-    label: "Show Ally Last Hit",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
+    const { container: showAllyLastHitToggle } = createSettingsInput({
+        key: "ui-improvements:showAllyLastHit",
+        label: "Show Ally Last Hit",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
 
-  const { container: moveRecentBattlesToggle } = createSettingsInput({
-    key: "ui-improvements:moveRecentBattles",
-    label: "Move Recent Battles",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
+    const { container: moveRecentBattlesToggle } = createSettingsInput({
+        key: "ui-improvements:moveRecentBattles",
+        label: "Move Recent Battles",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
 
-  const { container: linkRecentBattlesToggle } = createSettingsInput({
-    key: "ui-improvements:linkRecentBattles",
-    label: "Link Recent Battles",
-    defaultValue: true,
-    type: "checkbox",
-    inputProps: { slider: true },
-  });
+    const { container: linkRecentBattlesToggle } = createSettingsInput({
+        key: "ui-improvements:linkRecentBattles",
+        label: "Link Recent Battles",
+        defaultValue: true,
+        type: "checkbox",
+        inputProps: { slider: true },
+    });
 
-  addSettingsGroup("pvp", "PvP", "Settings related to PvP", [
-    useCustomSoloPvPStylesToggle,
-    showEnemyClassToggle,
-    showEnemyLastHitToggle,
-    showAllyLastHitToggle,
-    showAttackCardToggle,
-    moveRecentBattlesToggle,
-    linkRecentBattlesToggle,
-  ]);
+    addSettingsGroup("pvp", "PvP", "Settings related to PvP", [
+        useCustomSoloPvPStylesToggle,
+        showEnemyClassToggle,
+        showEnemyLastHitToggle,
+        showAllyLastHitToggle,
+        showAttackCardToggle,
+        moveRecentBattlesToggle,
+        linkRecentBattlesToggle,
+    ]);
 
-  const useCustomSoloPvPStyles = Storage.get(
-    "ui-improvements:useCustomSoloPvPStyles",
-    true,
-  );
+    const useCustomSoloPvPStyles = Storage.get(
+        "ui-improvements:useCustomSoloPvPStyles",
+        true,
+    );
 
-  const showAttackCard = Storage.get("ui-improvements:showAttackCard", true);
+    const showAttackCard = Storage.get("ui-improvements:showAttackCard", true);
 
-  const showEnemyClass = Storage.get("ui-improvements:showEnemyClass", true);
+    const showEnemyClass = Storage.get("ui-improvements:showEnemyClass", true);
 
-  const showEnemyLastHit = Storage.get(
-    "ui-improvements:showEnemyLastHit",
-    true,
-  );
+    const showEnemyLastHit = Storage.get(
+        "ui-improvements:showEnemyLastHit",
+        true,
+    );
 
-  const moveRecentBattles = Storage.get(
-    "ui-improvements:moveRecentBattles",
-    true,
-  );
+    const moveRecentBattles = Storage.get(
+        "ui-improvements:moveRecentBattles",
+        true,
+    );
 
-  const linkRecentBattles = Storage.get(
-    "ui-improvements:linkRecentBattles",
-    true,
-  );
+    const linkRecentBattles = Storage.get(
+        "ui-improvements:linkRecentBattles",
+        true,
+    );
 
-  const showAllyLastHit = Storage.get("ui-improvements:showAllyLastHit", true);
+    const showAllyLastHit = Storage.get("ui-improvements:showAllyLastHit", true);
 
-  if (
-    window.location.href.includes("pvp_battle.php") &&
-    useCustomSoloPvPStyles
-  ) {
-    const ladderValue = [...document.querySelectorAll(".pill")]
-      .find((p) => p.querySelector(".lbl")?.textContent.trim() === "Ladder")
-      ?.querySelector(".val")
-      ?.textContent.trim();
-    const isSolo = ladderValue.toLowerCase() === "solo";
-    console.log("isSolo", isSolo);
-    if (isSolo) {
-      const turnCard = [...document.querySelectorAll(".card")].find((card) =>
-        card.querySelector(".card-title")?.textContent.includes("Turn Control"),
-      );
+    if (
+        window.location.href.includes("pvp_battle.php") &&
+        useCustomSoloPvPStyles
+    ) {
+        const ladderValue = [...document.querySelectorAll(".pill")]
+        .find((p) => p.querySelector(".lbl")?.textContent.trim() === "Ladder")
+        ?.querySelector(".val")
+        ?.textContent.trim();
+        const isSolo = ladderValue.toLowerCase() === "solo";
+        console.log("isSolo", isSolo);
+        if (isSolo) {
+            const turnCard = [...document.querySelectorAll(".card")].find((card) =>
+                                                                          card.querySelector(".card-title")?.textContent.includes("Turn Control"),
+                                                                         );
 
-      const playerEl = document.querySelector(".topbar .pill .val.dim");
-      const turnWhoEl = document.getElementById("turnWho");
+            const playerEl = document.querySelector(".topbar .pill .val.dim");
+            const turnWhoEl = document.getElementById("turnWho");
 
-      function getPlayerName() {
-        const raw = playerEl?.textContent || "";
-        return raw.trim().toLowerCase();
-      }
+            function getPlayerName() {
+                const raw = playerEl?.textContent || "";
+                return raw.trim().toLowerCase();
+            }
 
-      function getTurnName() {
-        const raw = turnWhoEl?.textContent || "";
-        return raw.replace("🎯", "").trim().toLowerCase();
-      }
+            function getTurnName() {
+                const raw = turnWhoEl?.textContent || "";
+                return raw.replace("🎯", "").trim().toLowerCase();
+            }
 
-      const playerName = getPlayerName();
+            const playerName = getPlayerName();
 
-      function syncTokenCount() {
-        const myTokens = document.querySelector("#myTokens");
-        const modalTokens = document.querySelector("#modalTokens");
-        modalTokens.textContent = myTokens.textContent;
-        const tokens = Number(modalTokens.textContent);
+            function syncTokenCount() {
+                const myTokens = document.querySelector("#myTokens");
+                const modalTokens = document.querySelector("#modalTokens");
+                modalTokens.textContent = myTokens.textContent;
+                const tokens = Number(modalTokens.textContent);
 
-        for (const skillCard of document.querySelectorAll(
-          "#skillsGrid2 .skillCard",
-        )) {
-          const cost = Number(skillCard.dataset.cost);
-          skillCard.disabled = tokens < cost;
-        }
-      }
+                for (const skillCard of document.querySelectorAll(
+                    "#skillsGrid2 .skillCard",
+                )) {
+                    const cost = Number(skillCard.dataset.cost);
+                    skillCard.disabled = tokens < cost;
+                }
+            }
 
-      function checkTurn() {
-        if (showEnemyLastHit) {
-          renderLastHitEnemy();
-        }
-        if (showAllyLastHit) {
-          renderLastHitAlly();
-        }
+            function checkTurn() {
+                if (showEnemyLastHit) {
+                    renderLastHitEnemy();
+                }
+                if (showAllyLastHit) {
+                    renderLastHitAlly();
+                }
 
-        const turnName = getTurnName();
-        const modalBox = document.querySelector(".modalBox.card");
+                const turnName = getTurnName();
+                const modalBox = document.querySelector(".modalBox.card");
 
-        if (!playerName || !turnName || !modalBox) return;
+                if (!playerName || !turnName || !modalBox) return;
 
-        if (turnName.includes(playerName)) {
-          modalBox.classList.add("my-turn");
-        } else {
-          modalBox.classList.remove("my-turn");
-        }
-        syncTokenCount();
-      }
+                if (turnName.includes(playerName)) {
+                    modalBox.classList.add("my-turn");
+                } else {
+                    modalBox.classList.remove("my-turn");
+                }
+                syncTokenCount();
+            }
 
-      function populateSkills() {
-        const modalBox = document.querySelector(".modalBox.card");
-        if (modalBox) {
-          console.log("modalBox");
-          const skillsGrid = modalBox.querySelector("#skillsGrid2");
-          mySkills
-            .filter((skill) => {
-              const target = String(skill.target || "enemy");
-              return target === "enemy" || target === "self";
-            })
-            .forEach((skill) => {
-              skillsGrid.appendChild(
-                createSkillButton(skill, () =>
-                  useSkill(
-                    String(skill.id || "0"),
-                    String(skill.target || "enemy"),
-                  ),
-                ),
-              );
-            });
-        }
-      }
+            function populateSkills() {
+                const modalBox = document.querySelector(".modalBox.card");
+                if (modalBox) {
+                    console.log("modalBox");
+                    const skillsGrid = modalBox.querySelector("#skillsGrid2");
+                    mySkills
+                        .filter((skill) => {
+                        const target = String(skill.target || "enemy");
+                        return target === "enemy" || target === "self";
+                    })
+                        .forEach((skill) => {
+                        skillsGrid.appendChild(
+                            createSkillButton(skill, () =>
+                                              useSkill(
+                                String(skill.id || "0"),
+                                String(skill.target || "enemy"),
+                            ),
+                                             ),
+                        );
+                    });
+                }
+            }
 
-      function getLastEnemyDamage(logDetailsMap) {
-        const entries = Object.values(logDetailsMap);
+            function getLastEnemyDamage(logDetailsMap) {
+                const entries = Object.values(logDetailsMap);
 
-        for (let i = entries.length - 1; i >= 0; i--) {
-          const entry = entries[i];
+                for (let i = entries.length - 1; i >= 0; i--) {
+                    const entry = entries[i];
 
-          if (
-            entry &&
-            entry.kind === "attack" &&
-            entry.target?.side === "enemy"
-          ) {
-            const hpDamage = entry.target.hp_before - entry.target.hp_after;
+                    if (
+                        entry &&
+                        entry.kind === "attack" &&
+                        entry.target?.side === "enemy"
+                    ) {
+                        const hpDamage = entry.target.hp_before - entry.target.hp_after;
 
-            const actualDamage = entry.formula?.target_damage_dealt;
+                        const actualDamage = entry.formula?.target_damage_dealt;
 
-            return {
-              hpDamage,
-              actualDamage,
-              entry,
-            };
-          }
-        }
+                        return {
+                            hpDamage,
+                            actualDamage,
+                            entry,
+                        };
+                    }
+                }
 
-        return null;
-      }
+                return null;
+            }
 
-      function getLastHitByTargetSide(logDetailsMap, side) {
-        const entries = Object.values(logDetailsMap);
+            function getLastHitByTargetSide(logDetailsMap, side) {
+                const entries = Object.values(logDetailsMap);
 
-        for (let i = entries.length - 1; i >= 0; i--) {
-          const entry = entries[i];
+                for (let i = entries.length - 1; i >= 0; i--) {
+                    const entry = entries[i];
 
-          if (entry && entry.kind === "attack" && entry.target?.side === side) {
-            const hpDamage = entry.target.hp_before - entry.target.hp_after;
+                    if (entry && entry.kind === "attack" && entry.target?.side === side) {
+                        const hpDamage = entry.target.hp_before - entry.target.hp_after;
 
-            const actualDamage = entry.formula?.target_damage_dealt;
+                        const actualDamage = entry.formula?.target_damage_dealt;
 
-            return {
-              hpDamage,
-              actualDamage,
-              entry,
-            };
-          }
-        }
+                        return {
+                            hpDamage,
+                            actualDamage,
+                            entry,
+                        };
+                    }
+                }
 
-        return null;
-      }
+                return null;
+            }
 
-      function createSkillModal(tokens = 0) {
-        // outer container
-        const modal = document.createElement("div");
-        modal.className = "modalBox card";
-        modal.style.width = "100%";
+            function createSkillModal(tokens = 0) {
+                // outer container
+                const modal = document.createElement("div");
+                modal.className = "modalBox card";
+                modal.style.width = "100%";
 
-        // header
-        const modalHead = document.createElement("div");
-        modalHead.className = "modalHead";
+                // header
+                const modalHead = document.createElement("div");
+                modalHead.className = "modalHead";
 
-        const title = document.createElement("div");
-        title.className = "mhTitle";
-        title.textContent = "Active Skills";
+                const title = document.createElement("div");
+                title.className = "mhTitle";
+                title.textContent = "Active Skills";
 
-        const rightWrap = document.createElement("div");
-        rightWrap.style.display = "flex";
-        rightWrap.style.gap = "10px";
-        rightWrap.style.alignItems = "center";
-        rightWrap.style.flexWrap = "wrap";
+                const rightWrap = document.createElement("div");
+                rightWrap.style.display = "flex";
+                rightWrap.style.gap = "10px";
+                rightWrap.style.alignItems = "center";
+                rightWrap.style.flexWrap = "wrap";
 
-        // tokens chip
-        const badge = document.createElement("span");
-        badge.className = "badge";
-        badge.innerHTML = `Tokens: <span id="modalTokens">${tokens}</span>`;
+                // tokens chip
+                const badge = document.createElement("span");
+                badge.className = "badge";
+                badge.innerHTML = `Tokens: <span id="modalTokens">${tokens}</span>`;
 
-        // assemble header
-        rightWrap.appendChild(badge);
+                // assemble header
+                rightWrap.appendChild(badge);
 
-        modalHead.appendChild(title);
-        modalHead.appendChild(rightWrap);
+                modalHead.appendChild(title);
+                modalHead.appendChild(rightWrap);
 
-        // body
-        const modalBody = document.createElement("div");
-        modalBody.className = "modalBody";
+                // body
+                const modalBody = document.createElement("div");
+                modalBody.className = "modalBody";
 
-        const skillsGrid = document.createElement("div");
-        skillsGrid.className = "skillsGrid";
-        skillsGrid.id = "skillsGrid2";
+                const skillsGrid = document.createElement("div");
+                skillsGrid.className = "skillsGrid";
+                skillsGrid.id = "skillsGrid2";
 
-        // assemble body
-        modalBody.appendChild(skillsGrid);
+                // assemble body
+                modalBody.appendChild(skillsGrid);
 
-        // assemble modal
-        modal.appendChild(modalHead);
-        modal.appendChild(modalBody);
+                // assemble modal
+                modal.appendChild(modalHead);
+                modal.appendChild(modalBody);
 
-        return modal;
-      }
+                return modal;
+            }
 
-      function renderLastHitEnemy() {
-        if (!logDetailsMap) {
-          return;
-        }
-        const result = getLastEnemyDamage(logDetailsMap);
-        if (!result) return;
+            function renderLastHitEnemy() {
+                if (!logDetailsMap) {
+                    return;
+                }
+                const result = getLastEnemyDamage(logDetailsMap);
+                if (!result) return;
 
-        const { hpDamage, actualDamage, entry } = result;
+                const { hpDamage, actualDamage, entry } = result;
 
-        const card = document.querySelector("#topTeamCard .card-b");
-        if (!card) return;
+                const card = document.querySelector("#topTeamCard .card-b");
+                if (!card) return;
 
-        const key = entry?.actor?.key + "|" + entry?.target?.hp_after;
+                const key = entry?.actor?.key + "|" + entry?.target?.hp_after;
 
-        let box = card.querySelector(".lastHitBox");
+                let box = card.querySelector(".lastHitBox");
 
-        // Create if it doesn't exist
-        if (!box) {
-          box = document.createElement("div");
-          box.className = "lastHitBox";
-          box.style.marginTop = "10px";
-          box.style.padding = "8px";
-          box.style.borderRadius = "8px";
-          box.style.background = "rgba(0,150,255,0.08)";
-          box.style.fontWeight = "700";
-          box.style.display = "grid";
-          box.style.justifyContent = "center";
+                // Create if it doesn't exist
+                if (!box) {
+                    box = document.createElement("div");
+                    box.className = "lastHitBox";
+                    box.style.marginTop = "10px";
+                    box.style.padding = "8px";
+                    box.style.borderRadius = "8px";
+                    box.style.background = "rgba(0,150,255,0.08)";
+                    box.style.fontWeight = "700";
+                    box.style.display = "grid";
+                    box.style.justifyContent = "center";
 
-          card.appendChild(box);
-        }
+                    card.appendChild(box);
+                }
 
-        // Skip update if same hit
-        if (box.dataset.lastKey === key) return;
+                // Skip update if same hit
+                if (box.dataset.lastKey === key) return;
 
-        box.dataset.lastKey = key;
+                box.dataset.lastKey = key;
 
-        // Update content
-        box.innerHTML = `
+                // Update content
+                box.innerHTML = `
           <div style="opacity:.8;font-size:12px;">Last Hit</div>
           <div style="font-size:16px;">
             ${entry.skill?.name || "Attack"}
@@ -3936,49 +4251,49 @@ v2.2.2:
           </div>
         `;
 
-        box.classList.remove("animate");
-        void box.offsetWidth; // force reflow (important)
-        box.classList.add("animate");
-      }
+                box.classList.remove("animate");
+                void box.offsetWidth; // force reflow (important)
+                box.classList.add("animate");
+            }
 
-      function renderLastHitAlly() {
-        if (!logDetailsMap) {
-          return;
-        }
-        const result = getLastHitByTargetSide(logDetailsMap, "ally");
-        if (!result) return;
+            function renderLastHitAlly() {
+                if (!logDetailsMap) {
+                    return;
+                }
+                const result = getLastHitByTargetSide(logDetailsMap, "ally");
+                if (!result) return;
 
-        const { hpDamage, actualDamage, entry } = result;
+                const { hpDamage, actualDamage, entry } = result;
 
-        const card = document.querySelector("#bottomTeamCard .card-b");
-        if (!card) return;
+                const card = document.querySelector("#bottomTeamCard .card-b");
+                if (!card) return;
 
-        const key = `${entry.actor.key}-${entry.target.hp_before}-${entry.target.hp_after}`;
+                const key = `${entry.actor.key}-${entry.target.hp_before}-${entry.target.hp_after}`;
 
-        let box = card.querySelector(".lastHitBox");
+                let box = card.querySelector(".lastHitBox");
 
-        // Create if missing
-        if (!box) {
-          box = document.createElement("div");
-          box.className = "lastHitBox";
-          box.style.marginTop = "10px";
-          box.style.padding = "8px";
-          box.style.borderRadius = "8px";
-          box.style.background = "rgba(255,0,0,0.08)";
-          box.style.fontWeight = "700";
-          box.style.display = "grid";
-          box.style.justifyContent = "center";
+                // Create if missing
+                if (!box) {
+                    box = document.createElement("div");
+                    box.className = "lastHitBox";
+                    box.style.marginTop = "10px";
+                    box.style.padding = "8px";
+                    box.style.borderRadius = "8px";
+                    box.style.background = "rgba(255,0,0,0.08)";
+                    box.style.fontWeight = "700";
+                    box.style.display = "grid";
+                    box.style.justifyContent = "center";
 
-          card.prepend(box);
-        }
+                    card.prepend(box);
+                }
 
-        // Skip if same hit
-        if (box.dataset.lastKey === key) return;
+                // Skip if same hit
+                if (box.dataset.lastKey === key) return;
 
-        box.dataset.lastKey = key;
+                box.dataset.lastKey = key;
 
-        // Update content
-        box.innerHTML = `
+                // Update content
+                box.innerHTML = `
           <div style="opacity:.8;font-size:12px;">Last Hit Taken</div>
           <div style="font-size:16px;">
             ${entry.skill?.name || "Attack"}
@@ -3991,208 +4306,208 @@ v2.2.2:
           </div>
         `;
 
-        box.classList.remove("animate");
-        void box.offsetWidth; // force reflow (important)
-        box.classList.add("animate");
-      }
+                box.classList.remove("animate");
+                void box.offsetWidth; // force reflow (important)
+                box.classList.add("animate");
+            }
 
-      const initializeSkillsModal = () => {
-        const modalBox = createSkillModal(0);
-        // Add the skills modal into the page
-        turnCard.insertAdjacentElement("beforebegin", modalBox);
+            const initializeSkillsModal = () => {
+                const modalBox = createSkillModal(0);
+                // Add the skills modal into the page
+                turnCard.insertAdjacentElement("beforebegin", modalBox);
 
-        // use observer to get the initial pSlot target key & populate the skills
+                // use observer to get the initial pSlot target key & populate the skills
+                const observer = new MutationObserver(() => {
+                    const enemySlot = document.querySelector('.pSlot[data-side="enemy"]');
+                    if (enemySlot) {
+                        selectedTargetKey = enemySlot.dataset.key;
+                        populateSkills();
+                        observer.disconnect(); // stop observing once found
+                    }
+                });
+
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                });
+            };
+
+            (async function soloPvPMain(doc = document) {
+                if (showAttackCard) {
+                    initializeSkillsModal();
+                }
+                setInterval(checkTurn, 333);
+            })();
+        }
+    }
+
+    // ------------------------------- Solo PvP ------------------------------- //
+
+    // ----------------------------- PvP Main Page ---------------------------- //
+
+    if (window.location.href.includes("pvp.php") && useCustomSoloPvPStyles) {
+        function bindLeaderCardLinks() {
+            document.querySelectorAll(".leader-card").forEach((card) => {
+                if (card.dataset.linkBound) return;
+                const matchEl = card.querySelector(".info-pill span");
+                if (!matchEl) return;
+
+                const matchId = matchEl.textContent.replace("#", "").trim();
+                if (!matchId) return;
+
+                const url = `/pvp_battle.php?match_id=${matchId}`;
+
+                // UX improvements
+                card.style.cursor = "pointer";
+
+                card.addEventListener("click", (e) => {
+                    // Prevent weird behavior if user clicks text selection, etc.
+                    if (window.getSelection().toString()) return;
+
+                    window.location.href = url;
+                });
+
+                // Optional: allow middle-click / ctrl-click like a real link
+                card.addEventListener("auxclick", (e) => {
+                    if (e.button === 1) {
+                        window.open(url, "_blank");
+                    }
+                });
+
+                card.dataset.linkBound = "true";
+            });
+        }
+
+        function moveRecent() {
+            // 1. Main container
+            const mainCol = document.querySelector(".grid-col--main");
+
+            // 2. Find ALL sections that contain "Recent"
+            const recentSections = Array.from(document.querySelectorAll(".section"))
+            .filter((section) => {
+                const title = section.querySelector(".section-title");
+                return title && title.textContent.includes("Recent");
+            })
+            .map((section) => {
+                section.style.order = "6";
+                return section;
+            });
+
+            // 3. Move them into the main column (at the top or wherever you want)
+            recentSections.forEach((section) => {
+                mainCol.appendChild(section); // moves, not clones
+            });
+        }
+
+        (async function mainPvP(doc = document) {
+            if (linkRecentBattles) {
+                bindLeaderCardLinks();
+            }
+            if (moveRecentBattles) {
+                moveRecent();
+            }
+        })();
+    }
+
+    // ----------------------------- PvP Main Page ---------------------------- //
+
+    // ----------------------- PvP Battle (Solo & Party) ---------------------- //
+    // -------------------------- Show Enemy Classes -------------------------- //
+
+    if (window.location.href.includes("pvp_battle.php") && showEnemyClass) {
+        async function waitForStateData(getState, timeout = 5000) {
+            const start = Date.now();
+
+            while (Date.now() - start < timeout) {
+                const state = getState();
+                if (state?.teams?.enemy?.players_by_num) {
+                    updateEnemyRoleCache(state);
+                    return state;
+                }
+                await new Promise((r) => setTimeout(r, 100));
+            }
+
+            throw new Error("stateData not available");
+        }
+
+        let scheduled = false;
+
         const observer = new MutationObserver(() => {
-          const enemySlot = document.querySelector('.pSlot[data-side="enemy"]');
-          if (enemySlot) {
-            selectedTargetKey = enemySlot.dataset.key;
-            populateSkills();
-            observer.disconnect(); // stop observing once found
-          }
+            if (scheduled) return;
+            scheduled = true;
+
+            requestAnimationFrame(() => {
+                applyEnemyRolesFromCache();
+                scheduled = false;
+            });
         });
 
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true,
-        });
-      };
+        function observeFormation() {
+            const formation = document.querySelector("#enemyFormation");
+            if (!formation) return;
 
-      (async function soloPvPMain(doc = document) {
-        if (showAttackCard) {
-          initializeSkillsModal();
-        }
-        setInterval(checkTurn, 333);
-      })();
-    }
-  }
-
-  // ------------------------------- Solo PvP ------------------------------- //
-
-  // ----------------------------- PvP Main Page ---------------------------- //
-
-  if (window.location.href.includes("pvp.php") && useCustomSoloPvPStyles) {
-    function bindLeaderCardLinks() {
-      document.querySelectorAll(".leader-card").forEach((card) => {
-        if (card.dataset.linkBound) return;
-        const matchEl = card.querySelector(".info-pill span");
-        if (!matchEl) return;
-
-        const matchId = matchEl.textContent.replace("#", "").trim();
-        if (!matchId) return;
-
-        const url = `/pvp_battle.php?match_id=${matchId}`;
-
-        // UX improvements
-        card.style.cursor = "pointer";
-
-        card.addEventListener("click", (e) => {
-          // Prevent weird behavior if user clicks text selection, etc.
-          if (window.getSelection().toString()) return;
-
-          window.location.href = url;
-        });
-
-        // Optional: allow middle-click / ctrl-click like a real link
-        card.addEventListener("auxclick", (e) => {
-          if (e.button === 1) {
-            window.open(url, "_blank");
-          }
-        });
-
-        card.dataset.linkBound = "true";
-      });
-    }
-
-    function moveRecent() {
-      // 1. Main container
-      const mainCol = document.querySelector(".grid-col--main");
-
-      // 2. Find ALL sections that contain "Recent"
-      const recentSections = Array.from(document.querySelectorAll(".section"))
-        .filter((section) => {
-          const title = section.querySelector(".section-title");
-          return title && title.textContent.includes("Recent");
-        })
-        .map((section) => {
-          section.style.order = "6";
-          return section;
-        });
-
-      // 3. Move them into the main column (at the top or wherever you want)
-      recentSections.forEach((section) => {
-        mainCol.appendChild(section); // moves, not clones
-      });
-    }
-
-    (async function mainPvP(doc = document) {
-      if (linkRecentBattles) {
-        bindLeaderCardLinks();
-      }
-      if (moveRecentBattles) {
-        moveRecent();
-      }
-    })();
-  }
-
-  // ----------------------------- PvP Main Page ---------------------------- //
-
-  // ----------------------- PvP Battle (Solo & Party) ---------------------- //
-  // -------------------------- Show Enemy Classes -------------------------- //
-
-  if (window.location.href.includes("pvp_battle.php") && showEnemyClass) {
-    async function waitForStateData(getState, timeout = 5000) {
-      const start = Date.now();
-
-      while (Date.now() - start < timeout) {
-        const state = getState();
-        if (state?.teams?.enemy?.players_by_num) {
-          updateEnemyRoleCache(state);
-          return state;
-        }
-        await new Promise((r) => setTimeout(r, 100));
-      }
-
-      throw new Error("stateData not available");
-    }
-
-    let scheduled = false;
-
-    const observer = new MutationObserver(() => {
-      if (scheduled) return;
-      scheduled = true;
-
-      requestAnimationFrame(() => {
-        applyEnemyRolesFromCache();
-        scheduled = false;
-      });
-    });
-
-    function observeFormation() {
-      const formation = document.querySelector("#enemyFormation");
-      if (!formation) return;
-
-      observer.observe(formation, {
-        childList: true,
-        subtree: true,
-      });
-    }
-
-    // Re-attach if the whole formation gets replaced
-    const rootObserver = new MutationObserver(() => {
-      const formation = document.querySelector("#enemyFormation");
-      if (formation && !formation._observed) {
-        formation._observed = true;
-        observeFormation();
-      }
-    });
-
-    rootObserver.observe(document.body, { childList: true, subtree: true });
-
-    function applyEnemyRolesFromCache() {
-      const slots = document.querySelectorAll("#enemyFormation .pSlot");
-
-      slots.forEach((slot) => {
-        const key = slot.dataset.key;
-        const role = enemyRoleCache[key];
-
-        if (!role) return;
-
-        let roleEl = slot.querySelector(".roleTag");
-
-        // ✅ Skip if already correct
-        if (roleEl && roleEl.textContent === role) return;
-
-        if (!roleEl) {
-          roleEl = document.createElement("div");
-          roleEl.className = "roleTag";
-          roleEl.style.fontSize = "11px";
-          roleEl.style.opacity = "0.8";
-
-          const uname = slot.querySelector(".uname");
-          if (uname) uname.insertAdjacentElement("afterend", roleEl);
+            observer.observe(formation, {
+                childList: true,
+                subtree: true,
+            });
         }
 
-        roleEl.textContent = role;
-      });
+        // Re-attach if the whole formation gets replaced
+        const rootObserver = new MutationObserver(() => {
+            const formation = document.querySelector("#enemyFormation");
+            if (formation && !formation._observed) {
+                formation._observed = true;
+                observeFormation();
+            }
+        });
+
+        rootObserver.observe(document.body, { childList: true, subtree: true });
+
+        function applyEnemyRolesFromCache() {
+            const slots = document.querySelectorAll("#enemyFormation .pSlot");
+
+            slots.forEach((slot) => {
+                const key = slot.dataset.key;
+                const role = enemyRoleCache[key];
+
+                if (!role) return;
+
+                let roleEl = slot.querySelector(".roleTag");
+
+                // ✅ Skip if already correct
+                if (roleEl && roleEl.textContent === role) return;
+
+                if (!roleEl) {
+                    roleEl = document.createElement("div");
+                    roleEl.className = "roleTag";
+                    roleEl.style.fontSize = "11px";
+                    roleEl.style.opacity = "0.8";
+
+                    const uname = slot.querySelector(".uname");
+                    if (uname) uname.insertAdjacentElement("afterend", roleEl);
+                }
+
+                roleEl.textContent = role;
+            });
+        }
+
+        const enemyRoleCache = {};
+
+        function updateEnemyRoleCache(stateData) {
+            const enemies = stateData?.teams?.enemy?.players_by_num;
+            if (!enemies) return;
+
+            Object.values(enemies).forEach((p) => {
+                enemyRoleCache[p.key] = p.role;
+            });
+        }
+
+        (async () => {
+            try {
+                await waitForStateData(() => stateData);
+            } catch (err) {
+                console.error("Failed to apply enemy roles:", err);
+            }
+        })();
     }
-
-    const enemyRoleCache = {};
-
-    function updateEnemyRoleCache(stateData) {
-      const enemies = stateData?.teams?.enemy?.players_by_num;
-      if (!enemies) return;
-
-      Object.values(enemies).forEach((p) => {
-        enemyRoleCache[p.key] = p.role;
-      });
-    }
-
-    (async () => {
-      try {
-        await waitForStateData(() => stateData);
-      } catch (err) {
-        console.error("Failed to apply enemy roles:", err);
-      }
-    })();
-  }
 })();
